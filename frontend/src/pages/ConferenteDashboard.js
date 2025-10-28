@@ -3,6 +3,8 @@ import axios from 'axios';
 import { API } from '../App';
 import { LogOut, Calendar, Package, RefreshCw } from 'lucide-react';
 import ConferenciaScreen from '../components/ConferenciaScreen';
+import ModalIniciarConferencia from '../components/ModalIniciarConferencia';
+import ModalSelecionarRecipiente from '../components/ModalSelecionarRecipiente';
 
 export default function ConferenteDashboard({ usuario, onLogout }) {
   const [dataSelecionada, setDataSelecionada] = useState('');
