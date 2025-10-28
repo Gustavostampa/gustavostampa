@@ -4,6 +4,7 @@ import axios from 'axios';
 import Login from './pages/Login';
 import GestorDashboard from './pages/GestorDashboard';
 import ConferenteDashboard from './pages/ConferenteDashboard';
+import { Toaster } from './components/ui/sonner';
 import '@/App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -44,22 +45,25 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route 
-          path="/login" 
-          element={usuario ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} 
-        />
-        <Route 
-          path="/" 
-          element={
-            !usuario ? <Navigate to="/login" /> :
-            usuario.perfil === 'gestor' ? <GestorDashboard usuario={usuario} onLogout={handleLogout} /> :
-            <ConferenteDashboard usuario={usuario} onLogout={handleLogout} />
-          } 
-        />
-      </Routes>
-    </BrowserRouter>
+    <>
+      <BrowserRouter>
+        <Routes>
+          <Route 
+            path="/login" 
+            element={usuario ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} 
+          />
+          <Route 
+            path="/" 
+            element={
+              !usuario ? <Navigate to="/login" /> :
+              usuario.perfil === 'gestor' ? <GestorDashboard usuario={usuario} onLogout={handleLogout} /> :
+              <ConferenteDashboard usuario={usuario} onLogout={handleLogout} />
+            } 
+          />
+        </Routes>
+      </BrowserRouter>
+      <Toaster />
+    </>
   );
 }
 
