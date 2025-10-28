@@ -81,6 +81,10 @@ export default function GestorDashboard({ usuario, onLogout }) {
     }
   };
 
+  if (showProdutos) {
+    return <ProdutosScreen onVoltar={() => setShowProdutos(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b-4 border-black p-6">
