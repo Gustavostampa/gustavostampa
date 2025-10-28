@@ -173,10 +173,28 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
         </section>
 
         <section className="border-2 border-black p-6 rounded-lg">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Package size={24} />
-            Cargas Disponíveis
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <Package size={24} />
+              Cargas Disponíveis
+            </h2>
+            <div className="flex items-center gap-3">
+              {ultimaAtualizacao && (
+                <span className="text-sm text-gray-600">
+                  Última atualização: {formatarHora(ultimaAtualizacao)}
+                </span>
+              )}
+              <button
+                onClick={handleAtualizarCargas}
+                disabled={atualizando}
+                className="btn-outline flex items-center gap-2 text-sm disabled:opacity-50"
+                data-testid="btn-atualizar-cargas"
+              >
+                <RefreshCw size={18} className={atualizando ? 'animate-spin' : ''} />
+                {atualizando ? 'Atualizando...' : 'Atualizar Cargas'}
+              </button>
+            </div>
+          </div>
           
           {cargas.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
