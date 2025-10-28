@@ -462,6 +462,12 @@ async def importar_multi(file: UploadFile = File(...), acao: str = Form("substit
     
     # Salvar cargas
     for carga_data in cargas_dict.values():
+        # Buscar EANs dos produtos
+        for item in carga_data["itens"]:
+            produto = await db.produtos.find_one({"codigo_produto": item["codigo_produto"]})
+            if produto:
+                item["ean"] = produto["ean"]
+        
         existe = await db.cargas.find_one({"identificador_carga": carga_data["identificador_carga"]})
         if existe:
             duplicados.append(carga_data["identificador_carga"])
