@@ -1,0 +1,245 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { API } from '../App';
+import { LogOut, Calendar, Package } from 'lucide-react';
+import ConferenciaScreen from '../components/ConferenciaScreen';
+
+export default function ConferenteDashboard({ usuario, onLogout }) {
+  const [dataSelecionada, setDataSelecionada] = useState('');
+  const [tipoSelecionado, setTipoSelecionado] = useState('caixaria');
+  const [cargas, setCargas] = useState([]);
+  const [cargaSelecionada, setCargaSelecionada] = useState(null);
+  const [sessaoAtiva, setSessaoAtiva] = useState(null);
+
+  useEffect(() => {
+    const hoje = new Date().toISOString().split('T')[0];
+    setDataSelecionada(hoje);
+    verificarSessaoAtiva();
+  }, []);
+
+  useEffect(() => {
+    if (dataSelecionada) {
+      carregarCargas();
+    }
+  }, [dataSelecionada, tipoSelecionado]);
+
+  const verificarSessaoAtiva = async () => {
+    try {
+      const response = await axios.get(`${API}/sessoes/ativa/${usuario.id}`);
+      if (response.data) {
+        setSessaoAtiva(response.data);
+        const cargaResponse = await axios.get(`${API}/cargas/${response.data.carga_id}`);
+        setCargaSelecionada(cargaResponse.data);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar sessão ativa:', error);
+    }
+  };
+
+  const carregarCargas = async () => {
+    try {
+      const response = await axios.get(`${API}/cargas`, {
+        params: { data: dataSelecionada, tipo: tipoSelecionado }
+      });
+      setCargas(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar cargas:', error);
+    }
+  };
+
+  const handleIniciarCarga = async (carga) => {
+    try {
+      const response = await axios.post(`${API}/sessoes?conferente_id=${usuario.id}`, {
+        carga_id: carga.id
+      });
+      setSessaoAtiva(response.data);
+      setCargaSelecionada(carga);
+    } catch (error) {
+      alert(error.response?.data?.detail || 'Erro ao iniciar carga');
+    }
+  };
+
+  const handleVoltarLista = () => {
+    setCargaSelecionada(null);
+    setSessaoAtiva(null);
+    carregarCargas();
+  };
+
+  if (cargaSelecionada && sessaoAtiva) {
+    return (
+      <ConferenciaScreen
+        carga={cargaSelecionada}
+        sessao={sessaoAtiva}
+        usuario={usuario}
+        onVoltar={handleVoltarLista}
+        onLogout={onLogout}
+      />
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white">
+      <header className="border-b-4 border-black p-6">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold" style={{ fontFamily: 'Inter, sans-serif' }}>Painel do Conferente</h1>
+            <p className="text-sm mt-1">Bem-vindo, {usuario.nome}</p>
+          </div>
+          <button onClick={onLogout} className="btn-outline flex items-center gap-2" data-testid="btn-logout">
+            <LogOut size={20} />
+            Sair
+          </button>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto p-6 space-y-8">
+        <section className="border-2 border-black p-6 rounded-lg">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <Calendar size={24} />
+            Selecionar Data e Tipo
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold mb-2">Data</label>
+              <input
+                type="date"
+                value={dataSelecionada}
+                onChange={(e) => setDataSelecionada(e.target.value)}
+                className="w-full"
+                data-testid="input-data"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-bold mb-2">Tipo de Carga</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="tipo"
+                    value="caixaria"
+                    checked={tipoSelecionado === 'caixaria'}
+                    onChange={(e) => setTipoSelecionado(e.target.value)}
+                    data-testid="radio-caixaria"
+                    className="w-5 h-5"
+                  />
+                  <span className="font-semibold">Caixaria</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="tipo"
+                    value="multi"
+                    checked={tipoSelecionado === 'multi'}
+                    onChange={(e) => setTipoSelecionado(e.target.value)}
+                    data-testid="radio-multi"
+                    className="w-5 h-5"
+                  />
+                  <span className="font-semibold">Multi-pedidos</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-2 border-black p-6 rounded-lg">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <Package size={24} />
+            Cargas Disponíveis
+          </h2>
+          
+          {cargas.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <Package size={48} className="mx-auto mb-4 opacity-30" />
+              <p>Nenhuma carga encontrada para esta data e tipo</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {cargas.map((carga) => {
+                const totalItens = carga.itens.length;
+                const itensConferidos = carga.itens.filter(i => i.status !== 'pendente').length;
+                const progresso = totalItens > 0 ? (itensConferidos / totalItens * 100) : 0;
+
+                return (
+                  <div
+                    key={carga.id}
+                    className="border-2 border-black p-4 rounded-lg hover:bg-gray-50 transition-colors"
+                    data-testid={`carga-${carga.identificador_carga}`}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-bold text-lg">{carga.identificador_carga}</h3>
+                        <p className="text-sm text-gray-600">Data: {carga.data}</p>
+                      </div>
+                      <span className={`px-3 py-1 rounded text-xs font-semibold ${
+                        carga.status === 'finalizada' ? 'status-ok' :
+                        carga.status === 'em_andamento' ? 'status-pendente' :
+                        carga.status === 'pausada' ? 'bg-yellow-200 text-yellow-900' :
+                        'bg-gray-300 text-black'
+                      }`}>
+                        {carga.status === 'finalizada' ? 'Finalizada' :
+                         carga.status === 'em_andamento' ? 'Em Andamento' :
+                         carga.status === 'pausada' ? 'Pausada' : 'Aguardando'}
+                      </span>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Progresso</span>
+                        <span className="font-semibold">{Math.round(progresso)}%</span>
+                      </div>
+                      <div className="bg-gray-200 h-4 rounded overflow-hidden">
+                        <div
+                          className="bg-blue-600 h-full transition-all"
+                          style={{ width: `${progresso}%` }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between text-sm mb-4">
+                      <span>Total de itens: <strong>{totalItens}</strong></span>
+                      <span>Conferidos: <strong>{itensConferidos}</strong></span>
+                    </div>
+                    
+                    {carga.status === 'aguardando' && (
+                      <button
+                        onClick={() => handleIniciarCarga(carga)}
+                        className="btn-primary w-full"
+                        data-testid={`btn-iniciar-${carga.identificador_carga}`}
+                      >
+                        Iniciar Conferência
+                      </button>
+                    )}
+                    
+                    {(carga.status === 'em_andamento' || carga.status === 'pausada') && carga.conferente_id === usuario.id && (
+                      <button
+                        onClick={() => {
+                          setCargaSelecionada(carga);
+                          verificarSessaoAtiva();
+                        }}
+                        className="btn-secondary w-full"
+                        data-testid={`btn-continuar-${carga.identificador_carga}`}
+                      >
+                        Continuar Conferência
+                      </button>
+                    )}
+                    
+                    {carga.status === 'finalizada' && (
+                      <button
+                        className="btn-outline w-full cursor-not-allowed opacity-50"
+                        disabled
+                      >
+                        Conferência Finalizada
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
