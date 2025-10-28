@@ -224,6 +224,11 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
               </h1>
               <p className="text-sm mt-1">
                 {cargaAtual.tipo === 'caixaria' ? 'Caixaria' : 'Multi-pedidos'} • {cargaAtual.data}
+                {cargaAtual.tipo === 'multi' && sessaoAtual.recipiente && (
+                  <span className="ml-2 px-2 py-1 bg-blue-100 border border-blue-600 rounded font-semibold">
+                    Recipiente: {sessaoAtual.recipiente}
+                  </span>
+                )}
               </p>
             </div>
           </div>
