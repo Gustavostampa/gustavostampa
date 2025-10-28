@@ -55,6 +55,17 @@ class Produto(BaseModel):
     ativo: bool = True
     criado_em: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
+class ProdutoEAN(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    sku: str  # codigo_produto
+    ean: str  # EAN normalizado
+    tipo_unidade: str  # 'UNI', 'CX', 'EXB', 'FRD', etc
+    fator_conversao: int = 1  # quantas unidades representa (CX=12, FRD=100, etc)
+    descricao: Optional[str] = None  # descrição específica desta embalagem
+    ativo: bool = True
+    criado_em: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
 class ItemCarga(BaseModel):
     codigo_produto: str
     descricao: str
