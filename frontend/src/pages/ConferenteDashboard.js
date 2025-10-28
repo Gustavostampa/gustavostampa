@@ -14,6 +14,11 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
   const [sessaoAtiva, setSessaoAtiva] = useState(null);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
   const [atualizando, setAtualizando] = useState(false);
+  const [showModalRecipiente, setShowModalRecipiente] = useState(false);
+  const [showModalIniciar, setShowModalIniciar] = useState(false);
+  const [cargaParaIniciar, setCargaParaIniciar] = useState(null);
+  const [recipienteSelecionado, setRecipienteSelecionado] = useState(null);
+  const [sessaoPausada, setSessaoPausada] = useState(null);
   const syncIntervalRef = useRef(null);
 
   useEffect(() => {
