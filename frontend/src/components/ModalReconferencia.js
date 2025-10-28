@@ -52,7 +52,7 @@ export default function ModalReconferencia({ item, carga, onClose, onConfirmar }
         </div>
 
         {/* Informações do Item */}
-        <div className="border-2 border-black p-4 rounded-lg mb-6">
+        <div className="border-2 border-black p-4 rounded-lg mb-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-semibold text-gray-600">Código</p>
@@ -73,6 +73,16 @@ export default function ModalReconferencia({ item, carga, onClose, onConfirmar }
               </div>
             )}
           </div>
+        </div>
+
+        {/* Aviso de Zeramento */}
+        <div className="bg-yellow-50 border-2 border-yellow-600 p-3 rounded-lg mb-4">
+          <p className="text-sm font-semibold text-yellow-900">
+            ⚠️ A quantidade conferida foi zerada. Reconte este item do zero.
+          </p>
+          <p className="text-xs text-yellow-800 mt-1">
+            Anterior: {item.quantidade_conferida} • Esperado: {item.quantidade}
+          </p>
         </div>
 
         {/* Resumo Atual */}
