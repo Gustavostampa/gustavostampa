@@ -101,3 +101,138 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  Fix "Continuar Conferência" (resume paused load) functionality which was broken.
+  User reported: "Agora o problema se agravou não consigo retornar para a carga que estava pausada, 
+  quando clico em continuar conferencia dá problema"
+  
+  Also implement full "Sobra" (out-of-list EANs) tracking with dedicated UI tab.
+  
+  Ensure Multi-pedidos recipient flow is complete with recipient display in conferencing screen.
+
+backend:
+  - task: "Fix resume paused load endpoint"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Added new endpoint GET /api/sessoes/{sessao_id} to fetch session by ID.
+          This endpoint is needed by the frontend to get updated session data after resuming.
+          Line 682-687 in server.py
+
+  - task: "Sobra tracking backend"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: "already_implemented"
+        agent: "main"
+        comment: |
+          Backend sobra tracking was already fully implemented:
+          - registrar_sobra function (lines 772-799)
+          - Sobras stored in db.sobras collection
+          - GET /api/sobras/{sessao_id} endpoint exists (lines 807-810)
+          - Auto-increments quantity if same EAN scanned multiple times
+
+frontend:
+  - task: "Fix Continuar Conferência button"
+    implemented: true
+    working: "needs_testing"
+    file: "frontend/src/pages/ConferenteDashboard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Created new handleContinuarConferencia function (lines 138-169) that:
+          1. Fetches active/paused session for user
+          2. Calls /api/sessoes/{sessao_id}/retomar if paused
+          3. Fetches updated session data
+          4. Loads carga data
+          5. Sets states correctly
+          Previous implementation didn't call the retomar endpoint, causing the issue.
+
+  - task: "Sobra UI - Tab interface and display"
+    implemented: true
+    working: "needs_testing"
+    file: "frontend/src/components/ConferenciaScreen.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Added complete Sobra UI:
+          1. New state: abaAtiva ('itens' or 'sobras'), sobras array
+          2. carregarSobras() function to fetch sobras from backend
+          3. Tab interface to switch between "Itens da Carga" and "Sobras"
+          4. Sobras table showing: EAN, Descrição, Quantidade, Última Leitura
+          5. For Multi-pedidos: also shows Recipiente column
+          6. Auto-reloads sobras after each EAN scan
+          7. Red background highlighting for sobra items
+
+  - task: "Multi-pedidos recipient display"
+    implemented: true
+    working: "needs_testing"
+    file: "frontend/src/components/ConferenciaScreen.js"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Added recipient display in conference header (line 227-231):
+          - Shows blue badge with "Recipiente: {name}" for Multi-pedidos
+          - Only visible when tipo is 'multi' and recipiente exists in session
+          - Provides visual confirmation of active recipient during conferencing
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Fix Continuar Conferência button"
+    - "Sobra UI - Tab interface and display"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Implemented three major fixes/features:
+      
+      1. FIXED: "Continuar Conferência" functionality
+         - Root cause: Button wasn't calling the /api/sessoes/{id}/retomar endpoint
+         - Solution: Created proper handleContinuarConferencia function
+         - Added GET /api/sessoes/{sessao_id} backend endpoint
+      
+      2. IMPLEMENTED: Complete Sobra (out-of-list EANs) UI
+         - Tab interface to switch between Items and Sobras
+         - Full table display with all sobra details
+         - Auto-refresh after each scan
+         - Backend tracking was already complete
+      
+      3. ENHANCED: Multi-pedidos recipient display
+         - Added recipient badge in conference header
+         - Visible confirmation of active recipient
+      
+      All changes need testing. User will validate manually.
+      Ready for user validation.
