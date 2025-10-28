@@ -796,6 +796,12 @@ async def listar_leituras(sessao_id: str):
     leituras = await db.leituras.find({"sessao_id": sessao_id}, {"_id": 0}).to_list(10000)
     return leituras
 
+# Sobras
+@api_router.get("/sobras/{sessao_id}", response_model=List[Sobra])
+async def listar_sobras(sessao_id: str):
+    sobras = await db.sobras.find({"sessao_id": sessao_id}, {"_id": 0}).to_list(1000)
+    return sobras
+
 # Dashboard
 @api_router.get("/dashboard/estatisticas")
 async def obter_estatisticas(data: Optional[str] = None, tipo: Optional[str] = None, conferente_id: Optional[str] = None):
