@@ -135,6 +135,40 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
     setRecipienteSelecionado(null);
   };
 
+  const handleContinuarConferencia = async (carga) => {
+    try {
+      // Buscar a sessão pausada/ativa deste conferente para esta carga
+      const response = await axios.get(`${API}/sessoes/ativa/${usuario.id}`);
+      
+      if (!response.data) {
+        alert('Nenhuma sessão encontrada para esta carga');
+        return;
+      }
+      
+      const sessao = response.data;
+      
+      // Se a sessão está pausada, retomar
+      if (sessao.status === 'pausada') {
+        await axios.post(`${API}/sessoes/${sessao.id}/retomar`);
+        // Buscar sessão atualizada
+        const sessaoAtualizada = await axios.get(`${API}/sessoes/${sessao.id}`);
+        setSessaoAtiva(sessaoAtualizada.data);
+        setSessaoPausada(null);
+      } else {
+        // Sessão já está ativa
+        setSessaoAtiva(sessao);
+      }
+      
+      // Carregar dados da carga
+      const cargaResponse = await axios.get(`${API}/cargas/${sessao.carga_id}`);
+      setCargaSelecionada(cargaResponse.data);
+      
+    } catch (error) {
+      console.error('Erro ao continuar conferência:', error);
+      alert(error.response?.data?.detail || 'Erro ao continuar conferência');
+    }
+  };
+
   const handleVoltarLista = () => {
     setCargaSelecionada(null);
     setSessaoAtiva(null);
