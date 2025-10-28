@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Package } from 'lucide-react';
 
 export default function ModalReconferencia({ item, carga, onClose, onConfirmar }) {
-  const [novoConferido, setNovoConferido] = useState(item.quantidade_conferida);
+  const [novoConferido, setNovoConferido] = useState(0); // Começa do ZERO
   const [ean, setEan] = useState('');
   const [lastEnterTime, setLastEnterTime] = useState(0);
   const inputRef = useRef(null);
