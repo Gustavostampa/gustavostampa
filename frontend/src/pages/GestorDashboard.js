@@ -99,7 +99,7 @@ export default function GestorDashboard({ usuario, onLogout }) {
       </header>
 
       <main className="max-w-7xl mx-auto p-6 space-y-4">
-        <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <button
             onClick={() => handleOpenImport('produtos')}
             className="btn-primary p-3 flex items-center justify-center gap-2 text-sm"
@@ -125,6 +125,15 @@ export default function GestorDashboard({ usuario, onLogout }) {
           >
             <Upload size={18} />
             <span>Multi-pedidos</span>
+          </button>
+          
+          <button
+            onClick={() => setShowProdutos(true)}
+            className="btn-primary p-3 flex items-center justify-center gap-2 text-sm"
+            data-testid="btn-produtos"
+          >
+            <Package size={18} />
+            <span>Produtos</span>
           </button>
           
           <button
