@@ -81,10 +81,24 @@ class Sessao(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     carga_id: str
     conferente_id: str
+    recipiente: Optional[str] = None  # Para Multi-pedidos
     inicio: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     pausas: List[Dict[str, str]] = []
     fim: Optional[str] = None
     status: str = "ativa"  # ativa, pausada, finalizada
+
+class Sobra(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    carga_id: str
+    sessao_id: str
+    recipiente: Optional[str] = None  # Para Multi
+    ean: str
+    descricao: Optional[str] = None
+    quantidade: int = 0
+    primeira_leitura: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    ultima_leitura: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    observacao: Optional[str] = None
 
 class Leitura(BaseModel):
     model_config = ConfigDict(extra="ignore")
