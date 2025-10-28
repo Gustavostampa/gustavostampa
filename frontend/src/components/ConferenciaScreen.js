@@ -183,7 +183,7 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
     : cargaAtual.itens;
   
   // Habilitar finalizar apenas se houver sessão ativa e pelo menos 1 conferido
-  const podeF inalizar = (sessaoAtual.status === 'ativa' || sessaoAtual.status === 'pausada') && totalConferido > 0;
+  const podeFinalizar = (sessaoAtual.status === 'ativa' || sessaoAtual.status === 'pausada') && totalConferido > 0;
 
   return (
     <div className="min-h-screen bg-white">
