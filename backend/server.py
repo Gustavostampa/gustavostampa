@@ -835,39 +835,55 @@ async def registrar_leitura(input: LeituraCreate, conferente_id: str):
     sessao = await db.sessoes.find_one({"id": input.sessao_id})
     recipiente_sessao = sessao.get("recipiente") if sessao else None
     
-    # Validar EAN contra produtos
-    produto = await db.produtos.find_one({"ean": input.ean})
-    if not produto:
-        # EAN não existe no cadastro - Sobra
-        await registrar_sobra(input.carga_id, input.sessao_id, input.ean, input.quantidade, recipiente_sessao)
-        
-        leitura = Leitura(
-            sessao_id=input.sessao_id,
-            carga_id=input.carga_id,
-            conferente_id=conferente_id,
-            ean=input.ean,
-            quantidade=input.quantidade,
-            resultado="fora_lista"
-        )
-        await db.leituras.insert_one(leitura.model_dump())
-        return leitura
+    # Normalizar EAN
+    ean_normalizado = normalizar_ean(input.ean)
     
-    # Buscar item na carga
+    # 1. Buscar primeiro em produto_eans (novo sistema)
+    produto_ean = await db.produto_eans.find_one({"ean": ean_normalizado, "ativo": True})
+    
+    if produto_ean:
+        # EAN encontrado no sistema de múltiplos EANs
+        sku = produto_ean["sku"]
+        fator_conversao = produto_ean.get("fator_conversao", 1)
+        quantidade_real = input.quantidade * fator_conversao
+    else:
+        # 2. Fallback: buscar no sistema antigo (produtos.ean)
+        produto = await db.produtos.find_one({"ean": input.ean})
+        if produto:
+            sku = produto["codigo_produto"]
+            quantidade_real = input.quantidade
+        else:
+            # EAN não existe em nenhum cadastro - Sobra
+            await registrar_sobra(input.carga_id, input.sessao_id, input.ean, input.quantidade, recipiente_sessao)
+            
+            leitura = Leitura(
+                sessao_id=input.sessao_id,
+                carga_id=input.carga_id,
+                conferente_id=conferente_id,
+                ean=input.ean,
+                quantidade=input.quantidade,
+                resultado="fora_lista"
+            )
+            await db.leituras.insert_one(leitura.model_dump())
+            return leitura
+    
+    # 3. Buscar item na carga pelo SKU
     item_idx = None
     for idx, item in enumerate(carga["itens"]):
         # Para Multi, considerar também o recipiente
         if carga["tipo"] == "multi":
-            if item["codigo_produto"] == produto["codigo_produto"] and item.get("recipiente") == recipiente_sessao:
+            if item["codigo_produto"] == sku and item.get("recipiente") == recipiente_sessao:
                 item_idx = idx
                 break
         else:
-            if item["codigo_produto"] == produto["codigo_produto"]:
+            if item["codigo_produto"] == sku:
                 item_idx = idx
                 break
     
     if item_idx is None:
-        # Produto existe mas não está nesta carga/recipiente - Sobra
-        await registrar_sobra(input.carga_id, input.sessao_id, input.ean, input.quantidade, recipiente_sessao, produto["descricao"])
+        # SKU existe mas não está nesta carga/recipiente - Sobra
+        descricao = produto_ean.get("descricao") if produto_ean else (produto.get("descricao") if 'produto' in locals() else None)
+        await registrar_sobra(input.carga_id, input.sessao_id, input.ean, input.quantidade, recipiente_sessao, descricao)
         
         leitura = Leitura(
             sessao_id=input.sessao_id,
@@ -880,8 +896,8 @@ async def registrar_leitura(input: LeituraCreate, conferente_id: str):
         await db.leituras.insert_one(leitura.model_dump())
         return leitura
     
-    # Atualizar quantidade conferida
-    nova_qtd_conferida = carga["itens"][item_idx]["quantidade_conferida"] + input.quantidade
+    # 4. Atualizar quantidade conferida (aplicando fator de conversão)
+    nova_qtd_conferida = carga["itens"][item_idx]["quantidade_conferida"] + quantidade_real
     qtd_esperada = carga["itens"][item_idx]["quantidade"]
     
     resultado = "ok" if nova_qtd_conferida == qtd_esperada else "diferenca"
@@ -900,7 +916,7 @@ async def registrar_leitura(input: LeituraCreate, conferente_id: str):
         carga_id=input.carga_id,
         conferente_id=conferente_id,
         ean=input.ean,
-        quantidade=input.quantidade,
+        quantidade=quantidade_real,  # Armazena quantidade convertida
         resultado=resultado
     )
     await db.leituras.insert_one(leitura.model_dump())
