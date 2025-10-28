@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API } from '../App';
 import { ArrowLeft, Plus, Edit2, Trash2, Search, X, AlertTriangle } from 'lucide-react';
-import { toast } from 'sonner';
 
 export default function ProdutosScreen({ onVoltar }) {
   const [produtos, setProdutos] = useState([]);
