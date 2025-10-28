@@ -128,21 +128,31 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
 
   const handleConfirmarReconferencia = async (item, novaQuantidade) => {
     try {
-      // Calcular diferença
-      const diferenca = novaQuantidade - item.quantidade_conferida;
+      // Atualizar diretamente a quantidade conferida no backend
+      // Encontrar o índice do item na carga
+      const itemIndex = cargaAtual.itens.findIndex(i => 
+        i.codigo_produto === item.codigo_produto && 
+        (cargaAtual.tipo === 'caixaria' || i.recipiente === item.recipiente)
+      );
       
-      if (diferenca !== 0) {
-        // Registrar ajuste como leitura
-        await axios.post(
-          `${API}/leituras?conferente_id=${usuario.id}`,
-          {
-            sessao_id: sessaoAtual.id,
-            carga_id: cargaAtual.id,
-            ean: item.ean || item.codigo_produto,
-            quantidade: diferenca > 0 ? diferenca : -diferenca
-          }
-        );
+      if (itemIndex === -1) {
+        alert('Item não encontrado');
+        return;
       }
+
+      // Criar cópia da carga e atualizar o item
+      const cargaAtualizada = {...cargaAtual};
+      cargaAtualizada.itens[itemIndex].quantidade_conferida = novaQuantidade;
+      
+      // Atualizar status
+      const diferenca = cargaAtualizada.itens[itemIndex].quantidade - novaQuantidade;
+      cargaAtualizada.itens[itemIndex].status = diferenca === 0 ? 'ok' : 'diferenca';
+
+      // Atualizar no backend via endpoint de cargas
+      await axios.put(`${API}/cargas/${cargaAtual.id}/item/${itemIndex}`, {
+        quantidade_conferida: novaQuantidade,
+        status: diferenca === 0 ? 'ok' : 'diferenca'
+      });
 
       // Recarregar carga
       await recarregarCarga();
@@ -150,8 +160,8 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
       setItemReconferencia(null);
       alert('Reconferência registrada com sucesso!');
     } catch (error) {
-      alert('Erro ao registrar reconferência');
-      console.error(error);
+      console.error('Erro ao registrar reconferência:', error);
+      alert('Erro ao registrar reconferência: ' + (error.response?.data?.detail || error.message));
     }
   };
 
