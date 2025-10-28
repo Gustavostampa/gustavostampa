@@ -217,22 +217,46 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: |
-      Implemented three major fixes/features:
+      Implementadas três melhorias (TAREFA 1 COMPLETA, tarefas 2 e 3 pendentes):
       
-      1. FIXED: "Continuar Conferência" functionality
-         - Root cause: Button wasn't calling the /api/sessoes/{id}/retomar endpoint
-         - Solution: Created proper handleContinuarConferencia function
-         - Added GET /api/sessoes/{sessao_id} backend endpoint
+      ===== TAREFA 1: FINALIZAR CARGA → TELA "FINALIZADOS" =====
+      ✅ COMPLETO
       
-      2. IMPLEMENTED: Complete Sobra (out-of-list EANs) UI
-         - Tab interface to switch between Items and Sobras
-         - Full table display with all sobra details
-         - Auto-refresh after each scan
-         - Backend tracking was already complete
+      Backend:
+      1. Endpoint POST /api/sessoes/{id}/finalizar já existia (linhas 656-672)
+         - Seta status='finalizada' e fim=timestamp
+         - Atualiza status da carga para 'finalizada'
       
-      3. ENHANCED: Multi-pedidos recipient display
-         - Added recipient badge in conference header
-         - Visible confirmation of active recipient
+      2. NOVO: Endpoint GET /api/sessoes com filtros (linhas 689-725)
+         - Parâmetros: status, conferente_id, data_inicio, data_fim, limit, skip
+         - Retorna lista paginada ordenada por data (mais recentes primeiro)
+         - Filtro de data inclusivo (até 23:59:59 do dia final)
       
-      All changes need testing. User will validate manually.
-      Ready for user validation.
+      Frontend:
+      1. Adicionado sistema de abas no GestorDashboard
+         - Aba "Painel Tempo Real" (comportamento original)
+         - Aba "Finalizados" (nova funcionalidade)
+      
+      2. Nova função carregarSessoesFinalizadas()
+         - Busca sessões com status='finalizada'
+         - Carrega dados das cargas associadas
+         - Filtros: data e conferente
+      
+      3. Tabela de finalizados exibe:
+         - Identificador, Data, Tipo, Conferente
+         - Início, Fim, Duração (em minutos)
+         - Itens OK, Diferenças, Sobras
+      
+      4. Fluxo de finalização mantido (já existia):
+         - handleFinalizarDefinitivo() chama endpoint
+         - Remove carga via onVoltar()
+         - Mostra mensagem de sucesso
+      
+      ===== PRÓXIMAS TAREFAS =====
+      - Tarefa 2: Múltiplos EANs por produto (produto_eans)
+      - Tarefa 3: Multi-pedidos melhorado (filtro recipiente)
+      
+      NOTA: WebSocket não implementado. Usando polling no useEffect (atualiza ao trocar aba).
+      Migração de dados antigos: não necessária (modelo já suporta status 'finalizada').
+      
+      Tudo pronto para validação da Tarefa 1!
