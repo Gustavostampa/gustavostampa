@@ -339,6 +339,25 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
           )}
         </section>
       </main>
+
+      {/* Modais */}
+      {showModalRecipiente && cargaParaIniciar && (
+        <ModalSelecionarRecipiente
+          carga={cargaParaIniciar}
+          onConfirmar={handleConfirmarRecipiente}
+          onCancel={handleCancelarInicio}
+        />
+      )}
+
+      {showModalIniciar && cargaParaIniciar && (
+        <ModalIniciarConferencia
+          carga={cargaParaIniciar}
+          recipiente={recipienteSelecionado}
+          sessaoPausada={sessaoPausada}
+          onConfirmar={handleConfirmarInicio}
+          onCancel={handleCancelarInicio}
+        />
+      )}
     </div>
   );
 }
