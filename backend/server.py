@@ -710,7 +710,6 @@ async def listar_sessoes(
             filtro["inicio"]["$gte"] = data_inicio
         if data_fim:
             # Adicionar 1 dia para incluir todo o dia final
-            from datetime import datetime, timedelta
             dt_fim = datetime.fromisoformat(data_fim.replace('Z', '+00:00'))
             dt_fim_plus = (dt_fim + timedelta(days=1)).isoformat()
             filtro["inicio"]["$lt"] = dt_fim_plus
