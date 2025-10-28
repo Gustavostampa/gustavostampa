@@ -19,10 +19,14 @@ export default function GestorDashboard({ usuario, onLogout }) {
 
   useEffect(() => {
     if (!showProdutos) {
-      carregarStats();
+      if (abaAtiva === 'tempo-real') {
+        carregarStats();
+      } else {
+        carregarSessoesFinalizadas();
+      }
       carregarUsuarios();
     }
-  }, [filtros, showProdutos]);
+  }, [filtros, showProdutos, abaAtiva]);
 
   const carregarStats = async () => {
     try {
@@ -35,6 +39,33 @@ export default function GestorDashboard({ usuario, onLogout }) {
       setStats(response.data);
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);
+    }
+  };
+
+  const carregarSessoesFinalizadas = async () => {
+    try {
+      const params = { status: 'finalizada', limit: 100 };
+      if (filtros.data) params.data_inicio = filtros.data;
+      if (filtros.conferente_id) params.conferente_id = filtros.conferente_id;
+      
+      const response = await axios.get(`${API}/sessoes`, { params });
+      
+      // Buscar dados das cargas para cada sessão
+      const sessoesComCargas = await Promise.all(
+        response.data.map(async (sessao) => {
+          try {
+            const cargaResp = await axios.get(`${API}/cargas/${sessao.carga_id}`);
+            return { ...sessao, carga: cargaResp.data };
+          } catch (error) {
+            console.error('Erro ao buscar carga:', error);
+            return { ...sessao, carga: null };
+          }
+        })
+      );
+      
+      setSessoesFinalizadas(sessoesComCargas);
+    } catch (error) {
+      console.error('Erro ao carregar sessões finalizadas:', error);
     }
   };
 
