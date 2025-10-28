@@ -174,7 +174,16 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
   const totalItens = cargaAtual.itens.length;
   const itensOk = cargaAtual.itens.filter(i => i.status === 'ok').length;
   const itensDiferenca = cargaAtual.itens.filter(i => i.status === 'diferenca').length;
+  const totalConferido = cargaAtual.itens.reduce((sum, item) => sum + item.quantidade_conferida, 0);
   const progresso = totalItens > 0 ? (itensOk / totalItens * 100) : 0;
+  
+  // Filtrar itens se necessário
+  const itensExibidos = filtrarDiferencas 
+    ? cargaAtual.itens.filter(item => item.quantidade !== item.quantidade_conferida)
+    : cargaAtual.itens;
+  
+  // Habilitar finalizar apenas se houver sessão ativa e pelo menos 1 conferido
+  const podeF inalizar = (sessaoAtual.status === 'ativa' || sessaoAtual.status === 'pausada') && totalConferido > 0;
 
   return (
     <div className="min-h-screen bg-white">
