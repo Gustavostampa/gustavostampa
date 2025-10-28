@@ -86,15 +86,15 @@ export default function ProdutosScreen({ onVoltar }) {
     try {
       if (modalMode === 'criar') {
         await axios.post(`${API}/produtos/criar`, formData);
-        toast.success('Produto criado com sucesso!');
+        alert('Produto criado com sucesso!');
       } else {
         await axios.put(`${API}/produtos/${produtoEdit.id}`, formData);
-        toast.success('Produto atualizado com sucesso!');
+        alert('Produto atualizado com sucesso!');
       }
       setShowModal(false);
       carregarProdutos();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao salvar produto');
+      alert(error.response?.data?.detail || 'Erro ao salvar produto');
     }
   };
 
@@ -106,28 +106,28 @@ export default function ProdutosScreen({ onVoltar }) {
 
   const handleDelete = async () => {
     if (confirmDelete !== 'EXCLUIR') {
-      toast.error('Digite EXCLUIR para confirmar');
+      alert('Digite EXCLUIR para confirmar');
       return;
     }
 
     try {
       await axios.delete(`${API}/produtos/${produtoToDelete.id}`);
-      toast.success('Produto excluído com sucesso!');
+      alert('Produto excluído com sucesso!');
       setShowDeleteModal(false);
       setProdutoToDelete(null);
       carregarProdutos();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao excluir produto');
+      alert(error.response?.data?.detail || 'Erro ao excluir produto');
     }
   };
 
   const handleDesativar = async (produto) => {
     try {
       await axios.put(`${API}/produtos/${produto.id}`, { ativo: false });
-      toast.success('Produto desativado com sucesso!');
+      alert('Produto desativado com sucesso!');
       carregarProdutos();
     } catch (error) {
-      toast.error('Erro ao desativar produto');
+      alert('Erro ao desativar produto');
     }
   };
 
