@@ -28,7 +28,7 @@ export default function Login({ onLogin }) {
       <div className="w-full max-w-md">
         <div className="border-4 border-black p-8 rounded-lg">
           <h1 className="text-3xl font-bold text-center mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Sistema WMS
+            Stampa Confere
           </h1>
           
           <form onSubmit={handleSubmit} className="space-y-6">
