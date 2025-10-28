@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { API } from '../App';
-import { LogOut, Calendar, Package } from 'lucide-react';
+import { LogOut, Calendar, Package, RefreshCw } from 'lucide-react';
 import ConferenciaScreen from '../components/ConferenciaScreen';
 
 export default function ConferenteDashboard({ usuario, onLogout }) {
@@ -10,11 +10,25 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
   const [cargas, setCargas] = useState([]);
   const [cargaSelecionada, setCargaSelecionada] = useState(null);
   const [sessaoAtiva, setSessaoAtiva] = useState(null);
+  const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
+  const [atualizando, setAtualizando] = useState(false);
+  const syncIntervalRef = useRef(null);
 
   useEffect(() => {
     const hoje = new Date().toISOString().split('T')[0];
     setDataSelecionada(hoje);
     verificarSessaoAtiva();
+    
+    // Auto-sync a cada 60 segundos
+    syncIntervalRef.current = setInterval(() => {
+      carregarCargas(true);
+    }, 60000);
+    
+    return () => {
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -36,15 +50,23 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
     }
   };
 
-  const carregarCargas = async () => {
+  const carregarCargas = async (silent = false) => {
+    if (!silent) setAtualizando(true);
     try {
       const response = await axios.get(`${API}/cargas`, {
         params: { data: dataSelecionada, tipo: tipoSelecionado }
       });
       setCargas(response.data);
+      setUltimaAtualizacao(new Date());
     } catch (error) {
       console.error('Erro ao carregar cargas:', error);
+    } finally {
+      if (!silent) setAtualizando(false);
     }
+  };
+
+  const handleAtualizarCargas = () => {
+    carregarCargas();
   };
 
   const handleIniciarCarga = async (carga) => {
@@ -54,6 +76,8 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
       });
       setSessaoAtiva(response.data);
       setCargaSelecionada(carga);
+      // Atualizar cargas após iniciar
+      carregarCargas(true);
     } catch (error) {
       alert(error.response?.data?.detail || 'Erro ao iniciar carga');
     }
@@ -63,6 +87,11 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
     setCargaSelecionada(null);
     setSessaoAtiva(null);
     carregarCargas();
+  };
+
+  const formatarHora = (data) => {
+    if (!data) return '--:--:--';
+    return new Date(data).toLocaleTimeString('pt-BR');
   };
 
   if (cargaSelecionada && sessaoAtiva) {
