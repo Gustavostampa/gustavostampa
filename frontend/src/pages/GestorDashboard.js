@@ -15,14 +15,12 @@ export default function GestorDashboard({ usuario, onLogout }) {
   const [filtros, setFiltros] = useState({ data: '', tipo: '', conferente_id: '' });
   const [usuarios, setUsuarios] = useState([]);
 
-  if (showProdutos) {
-    return <ProdutosScreen onVoltar={() => setShowProdutos(false)} />;
-  }
-
   useEffect(() => {
-    carregarStats();
-    carregarUsuarios();
-  }, [filtros]);
+    if (!showProdutos) {
+      carregarStats();
+      carregarUsuarios();
+    }
+  }, [filtros, showProdutos]);
 
   const carregarStats = async () => {
     try {
