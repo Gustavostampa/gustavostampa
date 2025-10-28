@@ -4,7 +4,7 @@ import axios from 'axios';
 import Login from './pages/Login';
 import GestorDashboard from './pages/GestorDashboard';
 import ConferenteDashboard from './pages/ConferenteDashboard';
-import { Toaster } from './components/ui/sonner';
+import { Toaster } from 'sonner';
 import '@/App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -62,7 +62,7 @@ function App() {
           />
         </Routes>
       </BrowserRouter>
-      <Toaster />
+      <Toaster position="top-right" />
     </>
   );
 }
