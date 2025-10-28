@@ -93,10 +93,14 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
 
     try {
       await axios.post(`${API}/sessoes/${sessaoAtual.id}/finalizar`);
-      alert('Conferência finalizada com sucesso!');
+      // Primeiro volta, depois mostra o alert
       onVoltar();
+      setTimeout(() => {
+        alert('Conferência finalizada com sucesso!');
+      }, 100);
     } catch (error) {
-      alert('Erro ao finalizar sessão');
+      console.error('Erro ao finalizar:', error);
+      alert('Erro ao finalizar sessão: ' + (error.response?.data?.detail || error.message));
     }
   };
 
