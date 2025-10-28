@@ -214,7 +214,7 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
                 Retomar
               </button>
             )}
-            <button onClick={handleFinalizar} className="btn-primary flex items-center gap-2" data-testid="btn-finalizar">
+            <button onClick={handleFinalizar} disabled={!podeFinalizar} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" data-testid="btn-finalizar">
               <Check size={20} />
               Finalizar
             </button>
