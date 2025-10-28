@@ -12,6 +12,10 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
   const [quantidade, setQuantidade] = useState(1);
   const [ultimaLeitura, setUltimaLeitura] = useState(null);
   const [lastEnterTime, setLastEnterTime] = useState(0);
+  const [showModalFinalizacao, setShowModalFinalizacao] = useState(false);
+  const [showModalReconferencia, setShowModalReconferencia] = useState(false);
+  const [itemReconferencia, setItemReconferencia] = useState(null);
+  const [filtrarDiferencas, setFiltrarDiferencas] = useState(false);
   const inputRef = useRef(null);
 
   useEffect(() => {
