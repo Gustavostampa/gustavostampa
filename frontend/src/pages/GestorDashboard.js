@@ -92,50 +92,50 @@ export default function GestorDashboard({ usuario, onLogout }) {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto p-6 space-y-8">
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <main className="max-w-7xl mx-auto p-6 space-y-4">
+        <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           <button
             onClick={() => handleOpenImport('produtos')}
-            className="btn-primary p-6 flex flex-col items-center gap-3 h-32"
+            className="btn-primary p-3 flex items-center justify-center gap-2 text-sm"
             data-testid="btn-import-produtos"
           >
-            <Upload size={28} />
-            <span>Importar Produtos</span>
+            <Upload size={18} />
+            <span>Produtos</span>
           </button>
           
           <button
             onClick={() => handleOpenImport('caixaria')}
-            className="btn-primary p-6 flex flex-col items-center gap-3 h-32"
+            className="btn-primary p-3 flex items-center justify-center gap-2 text-sm"
             data-testid="btn-import-caixaria"
           >
-            <Upload size={28} />
-            <span>Importar Caixaria</span>
+            <Upload size={18} />
+            <span>Caixaria</span>
           </button>
           
           <button
             onClick={() => handleOpenImport('multi')}
-            className="btn-primary p-6 flex flex-col items-center gap-3 h-32"
+            className="btn-primary p-3 flex items-center justify-center gap-2 text-sm"
             data-testid="btn-import-multi"
           >
-            <Upload size={28} />
-            <span>Importar Multi-pedidos</span>
+            <Upload size={18} />
+            <span>Multi-pedidos</span>
           </button>
           
           <button
             onClick={() => setShowUsuariosModal(true)}
-            className="btn-secondary p-6 flex flex-col items-center gap-3 h-32"
+            className="btn-secondary p-3 flex items-center justify-center gap-2 text-sm"
             data-testid="btn-usuarios"
           >
-            <Users size={28} />
-            <span>Gerenciar Usuários</span>
+            <Users size={18} />
+            <span>Usuários</span>
           </button>
           
           <button
             onClick={carregarStats}
-            className="btn-outline p-6 flex flex-col items-center gap-3 h-32"
+            className="btn-outline p-3 flex items-center justify-center gap-2 text-sm"
             data-testid="btn-refresh"
           >
-            <RefreshCw size={20} />
+            <RefreshCw size={18} />
             <span>Atualizar</span>
           </button>
         </section>
