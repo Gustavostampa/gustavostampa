@@ -42,7 +42,7 @@ export default function ProdutosScreen({ onVoltar }) {
       setTotal(countRes.data.total);
     } catch (error) {
       console.error('Erro ao carregar produtos:', error);
-      toast.error('Erro ao carregar produtos');
+      alert('Erro ao carregar produtos');
     }
   };
 
