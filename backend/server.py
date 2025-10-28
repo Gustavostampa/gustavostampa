@@ -477,6 +477,14 @@ async def listar_cargas(data: Optional[str] = None, tipo: Optional[str] = None, 
     cargas = await db.cargas.find(filtro, {"_id": 0}).to_list(1000)
     return cargas
 
+@api_router.get("/cargas/ultima-atualizacao")
+async def obter_ultima_atualizacao():
+    # Retorna timestamp da última modificação em cargas
+    ultima = await db.cargas.find_one({}, {"_id": 0, "criado_em": 1}, sort=[("criado_em", -1)])
+    if ultima:
+        return {"ultima_atualizacao": ultima.get("criado_em", datetime.now(timezone.utc).isoformat())}
+    return {"ultima_atualizacao": datetime.now(timezone.utc).isoformat()}
+
 @api_router.get("/cargas/{carga_id}", response_model=Carga)
 async def obter_carga(carga_id: str):
     carga = await db.cargas.find_one({"id": carga_id}, {"_id": 0})
