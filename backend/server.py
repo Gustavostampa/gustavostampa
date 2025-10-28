@@ -428,10 +428,15 @@ async def importar_multi(file: UploadFile = File(...), acao: str = Form("substit
             erros.append(f"Linha {idx}: campos obrigatórios faltando")
             continue
         
+        # Normalizar data (remover timestamp se existir)
+        data_str = str(data)
+        if ' ' in data_str:
+            data_str = data_str.split(' ')[0]
+        
         if str(identificador_carga) not in cargas_dict:
             cargas_dict[str(identificador_carga)] = {
                 "identificador_carga": str(identificador_carga),
-                "data": str(data),
+                "data": data_str,
                 "tipo": "multi",
                 "itens": []
             }
