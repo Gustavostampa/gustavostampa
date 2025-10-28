@@ -21,7 +21,9 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
     
     // Auto-sync a cada 60 segundos
     syncIntervalRef.current = setInterval(() => {
-      carregarCargas(true);
+      if (!cargaSelecionada) {
+        carregarCargas(true);
+      }
     }, 60000);
     
     return () => {
@@ -32,7 +34,7 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
   }, []);
 
   useEffect(() => {
-    if (dataSelecionada) {
+    if (dataSelecionada && !cargaSelecionada) {
       carregarCargas();
     }
   }, [dataSelecionada, tipoSelecionado]);
