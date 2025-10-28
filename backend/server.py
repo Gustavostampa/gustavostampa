@@ -686,6 +686,42 @@ async def obter_sessao_por_id(sessao_id: str):
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
     return sessao
 
+@api_router.get("/sessoes", response_model=List[Sessao])
+async def listar_sessoes(
+    status: Optional[str] = None,
+    conferente_id: Optional[str] = None,
+    data_inicio: Optional[str] = None,
+    data_fim: Optional[str] = None,
+    limit: int = 100,
+    skip: int = 0
+):
+    filtro = {}
+    
+    if status:
+        filtro["status"] = status
+    
+    if conferente_id:
+        filtro["conferente_id"] = conferente_id
+    
+    # Filtro por data de início
+    if data_inicio or data_fim:
+        filtro["inicio"] = {}
+        if data_inicio:
+            filtro["inicio"]["$gte"] = data_inicio
+        if data_fim:
+            # Adicionar 1 dia para incluir todo o dia final
+            from datetime import datetime, timedelta
+            dt_fim = datetime.fromisoformat(data_fim.replace('Z', '+00:00'))
+            dt_fim_plus = (dt_fim + timedelta(days=1)).isoformat()
+            filtro["inicio"]["$lt"] = dt_fim_plus
+    
+    sessoes = await db.sessoes.find(
+        filtro,
+        {"_id": 0}
+    ).sort("inicio", -1).skip(skip).limit(limit).to_list(limit)
+    
+    return sessoes
+
 # Leituras
 @api_router.post("/leituras", response_model=Leitura)
 async def registrar_leitura(input: LeituraCreate, conferente_id: str):
