@@ -70,6 +70,7 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
         
         setUltimaLeitura(response.data);
         await recarregarCarga();
+        await carregarSobras();
         setEan('');
         setQuantidade(1);
         
