@@ -63,6 +63,7 @@ class ItemCarga(BaseModel):
     quantidade_conferida: int = 0
     status: str = "pendente"  # pendente, ok, diferenca, fora_lista
     recipiente: Optional[str] = None
+    ean: Optional[str] = None
 
 class Carga(BaseModel):
     model_config = ConfigDict(extra="ignore")
