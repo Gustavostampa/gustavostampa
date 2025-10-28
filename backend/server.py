@@ -679,6 +679,13 @@ async def obter_sessao_ativa(conferente_id: str):
     )
     return sessao
 
+@api_router.get("/sessoes/{sessao_id}", response_model=Sessao)
+async def obter_sessao_por_id(sessao_id: str):
+    sessao = await db.sessoes.find_one({"id": sessao_id}, {"_id": 0})
+    if not sessao:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    return sessao
+
 # Leituras
 @api_router.post("/leituras", response_model=Leitura)
 async def registrar_leitura(input: LeituraCreate, conferente_id: str):
