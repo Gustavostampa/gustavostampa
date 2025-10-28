@@ -515,6 +515,33 @@ async def obter_carga(carga_id: str):
         raise HTTPException(status_code=404, detail="Carga não encontrada")
     return carga
 
+class ItemUpdate(BaseModel):
+    quantidade_conferida: int
+    status: str
+
+@api_router.put("/cargas/{carga_id}/item/{item_index}")
+async def atualizar_item_carga(carga_id: str, item_index: int, update: ItemUpdate):
+    # Buscar carga
+    carga = await db.cargas.find_one({"id": carga_id})
+    if not carga:
+        raise HTTPException(status_code=404, detail="Carga não encontrada")
+    
+    # Validar índice
+    if item_index < 0 or item_index >= len(carga["itens"]):
+        raise HTTPException(status_code=400, detail="Índice de item inválido")
+    
+    # Atualizar item
+    carga["itens"][item_index]["quantidade_conferida"] = update.quantidade_conferida
+    carga["itens"][item_index]["status"] = update.status
+    
+    # Salvar no banco
+    await db.cargas.update_one(
+        {"id": carga_id},
+        {"$set": {"itens": carga["itens"]}}
+    )
+    
+    return {"message": "Item atualizado com sucesso"}
+
 # Sessões
 @api_router.post("/sessoes", response_model=Sessao)
 async def criar_sessao(input: SessaoCreate, conferente_id: str):
