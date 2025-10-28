@@ -335,6 +335,116 @@ export default function GestorDashboard({ usuario, onLogout }) {
             </table>
           </div>
         </section>
+        )}
+
+        {abaAtiva === 'finalizados' && (
+          <section className="border-2 border-black p-6 rounded-lg">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <BarChart3 size={24} />
+              Sessões Finalizadas
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-bold mb-2">Data</label>
+                <input
+                  type="date"
+                  value={filtros.data}
+                  onChange={(e) => setFiltros({...filtros, data: e.target.value})}
+                  data-testid="filter-data-finalizados"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-bold mb-2">Conferente</label>
+                <select
+                  value={filtros.conferente_id}
+                  onChange={(e) => setFiltros({...filtros, conferente_id: e.target.value})}
+                  data-testid="filter-conferente-finalizados"
+                >
+                  <option value="">Todos</option>
+                  {usuarios.map(u => (
+                    <option key={u.id} value={u.id}>{u.nome}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex items-end">
+                <button
+                  onClick={() => setFiltros({ data: '', tipo: '', conferente_id: '' })}
+                  className="btn-outline w-full"
+                  data-testid="btn-clear-filters-finalizados"
+                >
+                  Limpar Filtros
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table data-testid="finalizados-table">
+                <thead>
+                  <tr>
+                    <th>Identificador</th>
+                    <th>Data</th>
+                    <th>Tipo</th>
+                    <th>Conferente</th>
+                    <th>Início</th>
+                    <th>Fim</th>
+                    <th>Duração</th>
+                    <th>Itens OK</th>
+                    <th>Diferenças</th>
+                    <th>Sobras</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessoesFinalizadas.length === 0 ? (
+                    <tr>
+                      <td colSpan="10" className="text-center py-8 text-gray-500">
+                        Nenhuma sessão finalizada encontrada
+                      </td>
+                    </tr>
+                  ) : (
+                    sessoesFinalizadas.map((sessao, idx) => {
+                      if (!sessao.carga) return null;
+                      
+                      const itensOk = sessao.carga.itens.filter(i => i.status === 'ok').length;
+                      const itensDif = sessao.carga.itens.filter(i => i.status === 'diferenca').length;
+                      
+                      // Calcular duração
+                      let duracao = '-';
+                      if (sessao.inicio && sessao.fim) {
+                        const inicio = new Date(sessao.inicio);
+                        const fim = new Date(sessao.fim);
+                        const diffMs = fim - inicio;
+                        const diffMin = Math.floor(diffMs / 60000);
+                        duracao = `${diffMin}min`;
+                      }
+                      
+                      return (
+                        <tr key={idx} data-testid={`sessao-finalizada-${idx}`}>
+                          <td className="font-semibold">{sessao.carga.identificador_carga}</td>
+                          <td>{sessao.carga.data}</td>
+                          <td className="capitalize">{sessao.carga.tipo}</td>
+                          <td>{usuarios.find(u => u.id === sessao.conferente_id)?.nome || '-'}</td>
+                          <td className="text-sm">
+                            {sessao.inicio ? new Date(sessao.inicio).toLocaleTimeString('pt-BR') : '-'}
+                          </td>
+                          <td className="text-sm">
+                            {sessao.fim ? new Date(sessao.fim).toLocaleTimeString('pt-BR') : '-'}
+                          </td>
+                          <td className="text-center">{duracao}</td>
+                          <td className="text-center font-semibold text-green-700">{itensOk}</td>
+                          <td className="text-center font-semibold text-red-700">{itensDif}</td>
+                          <td className="text-center">-</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         <section className="flex gap-4">
           <button
