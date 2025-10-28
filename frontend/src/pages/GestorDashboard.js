@@ -190,7 +190,34 @@ export default function GestorDashboard({ usuario, onLogout }) {
           </button>
         </section>
 
-        <section className="border-2 border-black p-6 rounded-lg">
+        {/* Abas */}
+        <div className="flex border-b-2 border-black">
+          <button
+            onClick={() => setAbaAtiva('tempo-real')}
+            className={`px-6 py-3 font-bold transition-colors ${
+              abaAtiva === 'tempo-real'
+                ? 'bg-black text-white'
+                : 'bg-gray-200 text-black hover:bg-gray-300'
+            }`}
+            data-testid="aba-tempo-real"
+          >
+            Painel Tempo Real
+          </button>
+          <button
+            onClick={() => setAbaAtiva('finalizados')}
+            className={`px-6 py-3 font-bold transition-colors ${
+              abaAtiva === 'finalizados'
+                ? 'bg-black text-white'
+                : 'bg-gray-200 text-black hover:bg-gray-300'
+            }`}
+            data-testid="aba-finalizados"
+          >
+            Finalizados
+          </button>
+        </div>
+
+        {abaAtiva === 'tempo-real' && (
+          <section className="border-2 border-black p-6 rounded-lg">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <BarChart3 size={24} />
             Painel Tempo Real
