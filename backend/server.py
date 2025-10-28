@@ -564,7 +564,20 @@ async def criar_sessao(input: SessaoCreate, conferente_id: str):
     return sessao
 
 @api_router.post("/sessoes/{sessao_id}/pausar")
-async def pausar_sessao(sessao_id: str):
+async def pausar_sessao(sessao_id: str, conferente_id: str):
+    # Verificar se já existe outra sessão pausada
+    outra_pausada = await db.sessoes.find_one({
+        "conferente_id": conferente_id,
+        "status": "pausada",
+        "id": {"$ne": sessao_id}
+    })
+    
+    if outra_pausada:
+        raise HTTPException(
+            status_code=400, 
+            detail="Você já possui uma carga pausada. Retome ou finalize a carga pausada antes de pausar outra."
+        )
+    
     sessao = await db.sessoes.find_one({"id": sessao_id})
     if not sessao:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
