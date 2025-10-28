@@ -52,6 +52,7 @@ class Produto(BaseModel):
     descricao: str
     ean: str
     tipo_unidade: str
+    ativo: bool = True
     criado_em: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class ItemCarga(BaseModel):
