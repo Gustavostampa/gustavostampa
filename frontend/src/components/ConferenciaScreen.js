@@ -296,7 +296,23 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
         )}
 
         <section className="border-2 border-black p-6 rounded-lg">
-          <h2 className="text-xl font-bold mb-4">Itens da Carga</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Itens da Carga</h2>
+            {filtrarDiferencas && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-red-600">
+                  Exibindo apenas itens com diferença ({itensExibidos.length})
+                </span>
+                <button
+                  onClick={() => setFiltrarDiferencas(false)}
+                  className="btn-outline text-sm"
+                  data-testid="btn-mostrar-todos"
+                >
+                  Mostrar Todos
+                </button>
+              </div>
+            )}
+          </div>
           
           <div className="overflow-x-auto">
             <table data-testid="itens-table">
@@ -308,43 +324,91 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
                   <th>Unidade</th>
                   <th>Esperado</th>
                   <th>Conferido</th>
+                  <th>Dif.</th>
                   <th>Status</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {cargaAtual.itens.map((item, idx) => (
-                  <tr
-                    key={idx}
-                    className={`${
-                      item.status === 'ok' ? 'bg-green-100' :
-                      item.status === 'diferenca' ? 'bg-red-100' :
-                      ''
-                    }`}
-                    data-testid={`item-${idx}`}
-                  >
-                    {cargaAtual.tipo === 'multi' && <td className="font-semibold">{item.recipiente}</td>}
-                    <td className="font-mono">{item.codigo_produto}</td>
-                    <td>{item.descricao}</td>
-                    <td className="text-center">{item.unidade}</td>
-                    <td className="text-center font-semibold">{item.quantidade}</td>
-                    <td className="text-center font-semibold">{item.quantidade_conferida}</td>
-                    <td>
-                      <span className={`px-3 py-1 rounded text-sm font-semibold ${
-                        item.status === 'ok' ? 'status-ok' :
-                        item.status === 'diferenca' ? 'status-diferenca' :
-                        'status-pendente'
-                      }`}>
-                        {item.status === 'ok' ? 'OK' :
-                         item.status === 'diferenca' ? 'Diferença' : 'Pendente'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {itensExibidos.map((item, idx) => {
+                  const diferenca = item.quantidade - item.quantidade_conferida;
+                  return (
+                    <tr
+                      key={idx}
+                      className={`${
+                        item.status === 'ok' ? 'bg-green-100' :
+                        item.status === 'diferenca' ? 'bg-red-100' :
+                        ''
+                      }`}
+                      data-testid={`item-${idx}`}
+                    >
+                      {cargaAtual.tipo === 'multi' && <td className="font-semibold">{item.recipiente}</td>}
+                      <td className="font-mono">{item.codigo_produto}</td>
+                      <td>{item.descricao}</td>
+                      <td className="text-center">{item.unidade}</td>
+                      <td className="text-center font-semibold">{item.quantidade}</td>
+                      <td className="text-center font-semibold">{item.quantidade_conferida}</td>
+                      <td className="text-center">
+                        {diferenca !== 0 && (
+                          <span className={`font-bold px-2 py-1 rounded text-xs ${
+                            diferenca > 0 ? 'bg-red-200 text-red-900' : 'bg-orange-200 text-orange-900'
+                          }`}>
+                            {diferenca > 0 ? `−${diferenca}` : `+${Math.abs(diferenca)}`}
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <span className={`px-3 py-1 rounded text-sm font-semibold ${
+                          item.status === 'ok' ? 'status-ok' :
+                          item.status === 'diferenca' ? 'status-diferenca' :
+                          'status-pendente'
+                        }`}>
+                          {item.status === 'ok' ? 'OK' :
+                           item.status === 'diferenca' ? 'Diferença' : 'Pendente'}
+                        </span>
+                      </td>
+                      <td>
+                        {diferenca !== 0 && (
+                          <button
+                            onClick={() => handleAbrirReconferencia(item)}
+                            className="text-blue-600 hover:text-blue-800 p-1 flex items-center gap-1 text-sm font-semibold"
+                            data-testid={`btn-reconferir-${idx}`}
+                          >
+                            <RotateCcw size={16} />
+                            Reconferir
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </section>
       </main>
+
+      {/* Modais */}
+      {showModalFinalizacao && (
+        <ModalFinalizacao
+          carga={cargaAtual}
+          onClose={() => setShowModalFinalizacao(false)}
+          onReconferir={handleReconferir}
+          onFinalizarDefinitivo={handleFinalizarDefinitivo}
+        />
+      )}
+
+      {showModalReconferencia && itemReconferencia && (
+        <ModalReconferencia
+          item={itemReconferencia}
+          carga={cargaAtual}
+          onClose={() => {
+            setShowModalReconferencia(false);
+            setItemReconferencia(null);
+          }}
+          onConfirmar={handleConfirmarReconferencia}
+        />
+      )}
     </div>
   );
 }
