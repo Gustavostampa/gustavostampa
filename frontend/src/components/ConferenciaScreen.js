@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { API } from '../App';
-import { ArrowLeft, Pause, Play, Check, Package, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Pause, Play, Check, Package, AlertTriangle, RotateCcw } from 'lucide-react';
+import ModalFinalizacao from './ModalFinalizacao';
+import ModalReconferencia from './ModalReconferencia';
 
 export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, onLogout }) {
   const [cargaAtual, setCargaAtual] = useState(carga);
