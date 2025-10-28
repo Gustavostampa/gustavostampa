@@ -119,6 +119,7 @@ class LeituraCreate(BaseModel):
 
 class SessaoCreate(BaseModel):
     carga_id: str
+    recipiente: Optional[str] = None  # Obrigatório para Multi-pedidos
 
 def hash_senha(senha: str) -> str:
     return hashlib.sha256(senha.encode()).hexdigest()
