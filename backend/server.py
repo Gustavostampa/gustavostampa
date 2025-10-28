@@ -563,10 +563,25 @@ async def criar_sessao(input: SessaoCreate, conferente_id: str):
     # Verificar se conferente já tem sessão ativa
     sessao_ativa = await db.sessoes.find_one({
         "conferente_id": conferente_id,
-        "status": {"$in": ["ativa", "pausada"]}
+        "status": {" $in": ["ativa", "pausada"]}
     })
-    if sessao_ativa:
+    if sessao_ativa and sessao_ativa["status"] == "ativa":
         raise HTTPException(status_code=400, detail="Conferente já possui uma sessão ativa")
+    
+    # Buscar carga para validação
+    carga = await db.cargas.find_one({"id": input.carga_id})
+    if not carga:
+        raise HTTPException(status_code=404, detail="Carga não encontrada")
+    
+    # Se for Multi-pedidos, recipiente é obrigatório
+    if carga["tipo"] == "multi":
+        if not input.recipiente:
+            raise HTTPException(status_code=400, detail="Recipiente é obrigatório para Multi-pedidos")
+        
+        # Verificar se recipiente existe na carga
+        recipientes = set(item["recipiente"] for item in carga["itens"] if item.get("recipiente"))
+        if input.recipiente not in recipientes:
+            raise HTTPException(status_code=400, detail="Recipiente não encontrado nesta carga. Selecione um recipiente válido.")
     
     # Atualizar status da carga
     await db.cargas.update_one(
@@ -574,7 +589,11 @@ async def criar_sessao(input: SessaoCreate, conferente_id: str):
         {"$set": {"status": "em_andamento", "conferente_id": conferente_id}}
     )
     
-    sessao = Sessao(carga_id=input.carga_id, conferente_id=conferente_id)
+    sessao = Sessao(
+        carga_id=input.carga_id, 
+        conferente_id=conferente_id,
+        recipiente=input.recipiente
+    )
     await db.sessoes.insert_one(sessao.model_dump())
     return sessao
 
