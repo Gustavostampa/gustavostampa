@@ -438,6 +438,57 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
               </tbody>
             </table>
           </div>
+        </>
+      )}
+
+      {abaAtiva === 'sobras' && (
+        <>
+          <div className="mb-4">
+            <h2 className="text-xl font-bold mb-2">Sobras (EANs fora da lista)</h2>
+            <p className="text-sm text-gray-600">
+              EANs escaneados que não constam na lista da carga ou não pertencem ao recipiente atual.
+            </p>
+          </div>
+
+          {sobras.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <AlertTriangle size={48} className="mx-auto mb-4 opacity-30" />
+              <p>Nenhuma sobra registrada nesta conferência</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table data-testid="sobras-table">
+                <thead>
+                  <tr>
+                    {cargaAtual.tipo === 'multi' && <th>Recipiente</th>}
+                    <th>EAN</th>
+                    <th>Descrição</th>
+                    <th>Quantidade</th>
+                    <th>Última Leitura</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sobras.map((sobra, idx) => (
+                    <tr key={idx} className="bg-red-50" data-testid={`sobra-${idx}`}>
+                      {cargaAtual.tipo === 'multi' && (
+                        <td className="font-semibold">{sobra.recipiente || '-'}</td>
+                      )}
+                      <td className="font-mono font-bold">{sobra.ean}</td>
+                      <td>{sobra.descricao || 'Produto não cadastrado'}</td>
+                      <td className="text-center font-semibold">{sobra.quantidade}</td>
+                      <td className="text-sm">
+                        {sobra.ultima_leitura
+                          ? new Date(sobra.ultima_leitura).toLocaleString('pt-BR')
+                          : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
         </section>
       </main>
 
