@@ -153,9 +153,123 @@ async def deletar_usuario(usuario_id: str):
 
 # Produtos
 @api_router.get("/produtos", response_model=List[Produto])
-async def listar_produtos():
-    produtos = await db.produtos.find({}, {"_id": 0}).to_list(10000)
+async def listar_produtos(
+    descricao: Optional[str] = None,
+    codigo_produto: Optional[str] = None,
+    ean: Optional[str] = None,
+    page: int = 1,
+    limit: int = 50
+):
+    filtro = {}
+    if descricao:
+        filtro["descricao"] = {"$regex": descricao, "$options": "i"}
+    if codigo_produto:
+        filtro["codigo_produto"] = codigo_produto
+    if ean:
+        filtro["ean"] = ean
+    
+    skip = (page - 1) * limit
+    produtos = await db.produtos.find(filtro, {"_id": 0}).sort("descricao", 1).skip(skip).limit(limit).to_list(limit)
     return produtos
+
+@api_router.get("/produtos/count")
+async def contar_produtos(
+    descricao: Optional[str] = None,
+    codigo_produto: Optional[str] = None,
+    ean: Optional[str] = None
+):
+    filtro = {}
+    if descricao:
+        filtro["descricao"] = {"$regex": descricao, "$options": "i"}
+    if codigo_produto:
+        filtro["codigo_produto"] = codigo_produto
+    if ean:
+        filtro["ean"] = ean
+    
+    total = await db.produtos.count_documents(filtro)
+    return {"total": total}
+
+class ProdutoCreate(BaseModel):
+    codigo_produto: str
+    descricao: str
+    ean: str
+    tipo_unidade: str
+    ativo: bool = True
+
+class ProdutoUpdate(BaseModel):
+    codigo_produto: Optional[str] = None
+    descricao: Optional[str] = None
+    ean: Optional[str] = None
+    tipo_unidade: Optional[str] = None
+    ativo: Optional[bool] = None
+
+@api_router.post("/produtos/criar", response_model=Produto)
+async def criar_produto(input: ProdutoCreate):
+    # Validar tipo_unidade
+    if input.tipo_unidade not in ["UNI", "CX", "EXB"]:
+        raise HTTPException(status_code=400, detail="tipo_unidade deve ser UNI, CX ou EXB")
+    
+    # Verificar se EAN já existe
+    existe = await db.produtos.find_one({"ean": input.ean})
+    if existe:
+        raise HTTPException(status_code=400, detail="EAN já cadastrado")
+    
+    produto = Produto(**input.model_dump())
+    await db.produtos.insert_one(produto.model_dump())
+    return produto
+
+@api_router.put("/produtos/{produto_id}", response_model=Produto)
+async def atualizar_produto(produto_id: str, input: ProdutoUpdate):
+    # Buscar produto
+    produto = await db.produtos.find_one({"id": produto_id})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    # Preparar atualização
+    update_data = {}
+    if input.codigo_produto is not None:
+        update_data["codigo_produto"] = input.codigo_produto
+    if input.descricao is not None:
+        update_data["descricao"] = input.descricao
+    if input.ean is not None:
+        # Verificar se novo EAN já existe
+        if input.ean != produto["ean"]:
+            existe = await db.produtos.find_one({"ean": input.ean})
+            if existe:
+                raise HTTPException(status_code=400, detail="EAN já cadastrado")
+        update_data["ean"] = input.ean
+    if input.tipo_unidade is not None:
+        if input.tipo_unidade not in ["UNI", "CX", "EXB"]:
+            raise HTTPException(status_code=400, detail="tipo_unidade deve ser UNI, CX ou EXB")
+        update_data["tipo_unidade"] = input.tipo_unidade
+    if input.ativo is not None:
+        update_data["ativo"] = input.ativo
+    
+    await db.produtos.update_one({"id": produto_id}, {"$set": update_data})
+    produto_atualizado = await db.produtos.find_one({"id": produto_id}, {"_id": 0})
+    return produto_atualizado
+
+@api_router.delete("/produtos/{produto_id}")
+async def deletar_produto(produto_id: str):
+    # Buscar produto
+    produto = await db.produtos.find_one({"id": produto_id})
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    # Verificar se está em cargas não finalizadas
+    cargas_ativas = await db.cargas.find_one({
+        "status": {"$ne": "finalizada"},
+        "itens.codigo_produto": produto["codigo_produto"]
+    })
+    
+    if cargas_ativas:
+        raise HTTPException(
+            status_code=400, 
+            detail="Produto está em cargas não finalizadas. Use desativar ao invés de excluir."
+        )
+    
+    await db.produtos.delete_one({"id": produto_id})
+    return {"message": "Produto excluído com sucesso"}
 
 # Importações
 @api_router.post("/importar/produtos")
