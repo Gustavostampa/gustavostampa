@@ -319,6 +319,77 @@ async def deletar_produto(produto_id: str):
     await db.produtos.delete_one({"id": produto_id})
     return {"message": "Produto excluído com sucesso"}
 
+# Produto EANs
+@api_router.get("/produto-eans", response_model=List[ProdutoEAN])
+async def listar_produto_eans(sku: Optional[str] = None, ean: Optional[str] = None):
+    filtro = {}
+    if sku:
+        filtro["sku"] = sku
+    if ean:
+        ean_norm = normalizar_ean(ean)
+        filtro["ean"] = ean_norm
+    
+    eans = await db.produto_eans.find(filtro, {"_id": 0}).to_list(1000)
+    return eans
+
+@api_router.get("/produto-eans/buscar-por-ean/{ean}")
+async def buscar_produto_ean_por_ean(ean: str):
+    ean_norm = normalizar_ean(ean)
+    produto_ean = await db.produto_eans.find_one({"ean": ean_norm, "ativo": True}, {"_id": 0})
+    if not produto_ean:
+        return None
+    return produto_ean
+
+@api_router.post("/produto-eans/criar", response_model=ProdutoEAN)
+async def criar_produto_ean(produto_ean: ProdutoEAN):
+    # Normalizar EAN
+    produto_ean.ean = normalizar_ean(produto_ean.ean)
+    
+    # Verificar se já existe este EAN
+    existe = await db.produto_eans.find_one({"ean": produto_ean.ean})
+    if existe:
+        raise HTTPException(status_code=400, detail="EAN já cadastrado")
+    
+    # Verificar se SKU existe
+    produto = await db.produtos.find_one({"codigo_produto": produto_ean.sku})
+    if not produto:
+        raise HTTPException(status_code=404, detail="SKU não encontrado no cadastro de produtos")
+    
+    await db.produto_eans.insert_one(produto_ean.model_dump())
+    return produto_ean
+
+@api_router.put("/produto-eans/{produto_ean_id}", response_model=ProdutoEAN)
+async def atualizar_produto_ean(produto_ean_id: str, update_data: Dict[str, Any]):
+    # Normalizar EAN se fornecido
+    if "ean" in update_data:
+        update_data["ean"] = normalizar_ean(update_data["ean"])
+        
+        # Verificar duplicidade
+        existe = await db.produto_eans.find_one({
+            "ean": update_data["ean"],
+            "id": {"$ne": produto_ean_id}
+        })
+        if existe:
+            raise HTTPException(status_code=400, detail="EAN já cadastrado")
+    
+    result = await db.produto_eans.update_one(
+        {"id": produto_ean_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Produto EAN não encontrado")
+    
+    updated = await db.produto_eans.find_one({"id": produto_ean_id}, {"_id": 0})
+    return ProdutoEAN(**updated)
+
+@api_router.delete("/produto-eans/{produto_ean_id}")
+async def deletar_produto_ean(produto_ean_id: str):
+    result = await db.produto_eans.delete_one({"id": produto_ean_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Produto EAN não encontrado")
+    return {"message": "Produto EAN excluído com sucesso"}
+
 # Importações
 @api_router.post("/importar/produtos")
 async def importar_produtos(file: UploadFile = File(...), acao: str = Form("substituir")):
