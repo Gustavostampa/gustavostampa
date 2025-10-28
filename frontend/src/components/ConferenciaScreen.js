@@ -24,6 +24,7 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
     if (inputRef.current) {
       inputRef.current.focus();
     }
+    carregarSobras();
   }, []);
 
   const recarregarCarga = async () => {
@@ -32,6 +33,15 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
       setCargaAtual(response.data);
     } catch (error) {
       console.error('Erro ao recarregar carga:', error);
+    }
+  };
+
+  const carregarSobras = async () => {
+    try {
+      const response = await axios.get(`${API}/sobras/${sessao.id}`);
+      setSobras(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar sobras:', error);
     }
   };
 
