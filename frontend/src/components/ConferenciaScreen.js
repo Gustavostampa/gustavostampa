@@ -321,26 +321,54 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
         )}
 
         <section className="border-2 border-black p-6 rounded-lg">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">Itens da Carga</h2>
-            {filtrarDiferencas && (
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-red-600">
-                  Exibindo apenas itens com diferença ({itensExibidos.length})
-                </span>
-                <button
-                  onClick={() => setFiltrarDiferencas(false)}
-                  className="btn-outline text-sm"
-                  data-testid="btn-mostrar-todos"
-                >
-                  Mostrar Todos
-                </button>
-              </div>
-            )}
+          {/* Abas */}
+          <div className="flex border-b-2 border-black mb-4">
+            <button
+              onClick={() => setAbaAtiva('itens')}
+              className={`px-6 py-3 font-bold transition-colors ${
+                abaAtiva === 'itens'
+                  ? 'bg-black text-white'
+                  : 'bg-gray-200 text-black hover:bg-gray-300'
+              }`}
+              data-testid="aba-itens"
+            >
+              Itens da Carga ({cargaAtual.itens.length})
+            </button>
+            <button
+              onClick={() => setAbaAtiva('sobras')}
+              className={`px-6 py-3 font-bold transition-colors ${
+                abaAtiva === 'sobras'
+                  ? 'bg-black text-white'
+                  : 'bg-gray-200 text-black hover:bg-gray-300'
+              }`}
+              data-testid="aba-sobras"
+            >
+              Sobras ({sobras.length})
+            </button>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table data-testid="itens-table">
+
+          {abaAtiva === 'itens' && (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold">Itens da Carga</h2>
+                {filtrarDiferencas && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-red-600">
+                      Exibindo apenas itens com diferença ({itensExibidos.length})
+                    </span>
+                    <button
+                      onClick={() => setFiltrarDiferencas(false)}
+                      className="btn-outline text-sm"
+                      data-testid="btn-mostrar-todos"
+                    >
+                      Mostrar Todos
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table data-testid="itens-table">
               <thead>
                 <tr>
                   {cargaAtual.tipo === 'multi' && <th>Recipiente</th>}
