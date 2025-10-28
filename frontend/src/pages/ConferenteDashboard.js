@@ -49,6 +49,9 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
       }
     } catch (error) {
       console.error('Erro ao verificar sessão ativa:', error);
+      // Se não tiver sessão ativa, limpa o estado
+      setSessaoAtiva(null);
+      setCargaSelecionada(null);
     }
   };
 
