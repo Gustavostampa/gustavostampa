@@ -14,6 +14,8 @@ export default function GestorDashboard({ usuario, onLogout }) {
   const [stats, setStats] = useState([]);
   const [filtros, setFiltros] = useState({ data: '', tipo: '', conferente_id: '' });
   const [usuarios, setUsuarios] = useState([]);
+  const [abaAtiva, setAbaAtiva] = useState('tempo-real'); // 'tempo-real' ou 'finalizados'
+  const [sessoesFinalizadas, setSessoesFinalizadas] = useState([]);
 
   useEffect(() => {
     if (!showProdutos) {
