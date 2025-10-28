@@ -135,6 +135,26 @@ class SessaoCreate(BaseModel):
 def hash_senha(senha: str) -> str:
     return hashlib.sha256(senha.encode()).hexdigest()
 
+def normalizar_ean(ean: str) -> str:
+    """
+    Normaliza EAN removendo espaços, hífens e validando formato.
+    Aceita GTIN-8, GTIN-12, GTIN-13, GTIN-14.
+    Retorna string numérica padronizada.
+    """
+    if not ean:
+        return ""
+    
+    # Remove espaços, hífens e caracteres não numéricos
+    ean_limpo = ''.join(c for c in ean if c.isdigit())
+    
+    # Valida comprimento (EAN-8, EAN-13, UPC-12, GTIN-14)
+    if len(ean_limpo) not in [8, 12, 13, 14]:
+        return ean_limpo  # Retorna mesmo assim para permitir EANs customizados
+    
+    # Pad com zeros à esquerda para garantir comprimento consistente
+    # Armazena sempre como 14 dígitos (GTIN-14 é o padrão mais amplo)
+    return ean_limpo.zfill(14)
+
 # Auth
 @api_router.post("/auth/login")
 async def login(request: LoginRequest):
