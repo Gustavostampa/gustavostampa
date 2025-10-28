@@ -347,10 +347,7 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
                     
                     {(carga.status === 'em_andamento' || carga.status === 'pausada') && carga.conferente_id === usuario.id && (
                       <button
-                        onClick={() => {
-                          setCargaSelecionada(carga);
-                          verificarSessaoAtiva();
-                        }}
+                        onClick={() => handleContinuarConferencia(carga)}
                         className="btn-secondary w-full"
                         data-testid={`btn-continuar-${carga.identificador_carga}`}
                       >
