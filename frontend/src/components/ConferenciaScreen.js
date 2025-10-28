@@ -72,11 +72,13 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
 
   const handlePausar = async () => {
     try {
-      await axios.post(`${API}/sessoes/${sessaoAtual.id}/pausar`);
+      await axios.post(`${API}/sessoes/${sessaoAtual.id}/pausar?conferente_id=${usuario.id}`);
       setSessaoAtual({...sessaoAtual, status: 'pausada'});
       alert('Sessão pausada');
     } catch (error) {
-      alert('Erro ao pausar sessão');
+      const errorMsg = error.response?.data?.detail || 'Erro ao pausar sessão';
+      alert(errorMsg);
+      console.error('Erro ao pausar:', error);
     }
   };
 
