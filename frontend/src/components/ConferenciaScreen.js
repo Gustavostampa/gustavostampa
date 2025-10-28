@@ -1,0 +1,270 @@
+import { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import { API } from '../App';
+import { ArrowLeft, Pause, Play, Check, Package, AlertTriangle } from 'lucide-react';
+
+export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, onLogout }) {
+  const [cargaAtual, setCargaAtual] = useState(carga);
+  const [sessaoAtual, setSessaoAtual] = useState(sessao);
+  const [ean, setEan] = useState('');
+  const [quantidade, setQuantidade] = useState(1);
+  const [ultimaLeitura, setUltimaLeitura] = useState(null);
+  const [lastEnterTime, setLastEnterTime] = useState(0);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
+  const recarregarCarga = async () => {
+    try {
+      const response = await axios.get(`${API}/cargas/${carga.id}`);
+      setCargaAtual(response.data);
+    } catch (error) {
+      console.error('Erro ao recarregar carga:', error);
+    }
+  };
+
+  const handleKeyDown = async (e) => {
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      
+      const now = Date.now();
+      if (now - lastEnterTime < 150) {
+        return;
+      }
+      setLastEnterTime(now);
+
+      if (!ean.trim()) return;
+
+      try {
+        const response = await axios.post(
+          `${API}/leituras?conferente_id=${usuario.id}`,
+          {
+            sessao_id: sessaoAtual.id,
+            carga_id: cargaAtual.id,
+            ean: ean.trim(),
+            quantidade: quantidade
+          }
+        );
+        
+        setUltimaLeitura(response.data);
+        await recarregarCarga();
+        setEan('');
+        setQuantidade(1);
+        
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      } catch (error) {
+        alert('Erro ao registrar leitura');
+      }
+    }
+  };
+
+  const handlePausar = async () => {
+    try {
+      await axios.post(`${API}/sessoes/${sessaoAtual.id}/pausar`);
+      setSessaoAtual({...sessaoAtual, status: 'pausada'});
+      alert('Sessão pausada');
+    } catch (error) {
+      alert('Erro ao pausar sessão');
+    }
+  };
+
+  const handleRetomar = async () => {
+    try {
+      await axios.post(`${API}/sessoes/${sessaoAtual.id}/retomar`);
+      setSessaoAtual({...sessaoAtual, status: 'ativa'});
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    } catch (error) {
+      alert('Erro ao retomar sessão');
+    }
+  };
+
+  const handleFinalizar = async () => {
+    if (!window.confirm('Deseja finalizar esta conferência?')) {
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/sessoes/${sessaoAtual.id}/finalizar`);
+      alert('Conferência finalizada com sucesso!');
+      onVoltar();
+    } catch (error) {
+      alert('Erro ao finalizar sessão');
+    }
+  };
+
+  const totalItens = cargaAtual.itens.length;
+  const itensOk = cargaAtual.itens.filter(i => i.status === 'ok').length;
+  const itensDiferenca = cargaAtual.itens.filter(i => i.status === 'diferenca').length;
+  const progresso = totalItens > 0 ? (itensOk / totalItens * 100) : 0;
+
+  return (
+    <div className="min-h-screen bg-white">
+      <header className="border-b-4 border-black p-6">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <button onClick={onVoltar} className="btn-outline p-2" data-testid="btn-voltar">
+              <ArrowLeft size={24} />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold" style={{ fontFamily: 'Inter, sans-serif' }}>
+                Conferência: {cargaAtual.identificador_carga}
+              </h1>
+              <p className="text-sm mt-1">
+                {cargaAtual.tipo === 'caixaria' ? 'Caixaria' : 'Multi-pedidos'} • {cargaAtual.data}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {sessaoAtual.status === 'ativa' ? (
+              <button onClick={handlePausar} className="btn-secondary flex items-center gap-2" data-testid="btn-pausar">
+                <Pause size={20} />
+                Pausar
+              </button>
+            ) : (
+              <button onClick={handleRetomar} className="btn-primary flex items-center gap-2" data-testid="btn-retomar">
+                <Play size={20} />
+                Retomar
+              </button>
+            )}
+            <button onClick={handleFinalizar} className="btn-primary flex items-center gap-2" data-testid="btn-finalizar">
+              <Check size={20} />
+              Finalizar
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto p-6 space-y-6">
+        <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="border-2 border-black p-4 rounded-lg">
+            <p className="text-sm font-semibold mb-1">Progresso</p>
+            <p className="text-3xl font-bold">{Math.round(progresso)}%</p>
+          </div>
+          <div className="border-2 border-green-600 p-4 rounded-lg bg-green-50">
+            <p className="text-sm font-semibold mb-1 text-green-900">Conferidos OK</p>
+            <p className="text-3xl font-bold text-green-700">{itensOk}</p>
+          </div>
+          <div className="border-2 border-red-600 p-4 rounded-lg bg-red-50">
+            <p className="text-sm font-semibold mb-1 text-red-900">Diferenças</p>
+            <p className="text-3xl font-bold text-red-700">{itensDiferenca}</p>
+          </div>
+          <div className="border-2 border-black p-4 rounded-lg">
+            <p className="text-sm font-semibold mb-1">Total Itens</p>
+            <p className="text-3xl font-bold">{totalItens}</p>
+          </div>
+        </section>
+
+        {sessaoAtual.status === 'ativa' && (
+          <section className="border-4 border-blue-600 p-6 rounded-lg bg-blue-50">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Package size={24} />
+              Scanner EAN
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold mb-2">Código EAN</label>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={ean}
+                  onChange={(e) => setEan(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Bipe ou digite o EAN e pressione Enter"
+                  className="w-full text-lg"
+                  data-testid="input-ean"
+                  autoFocus
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-bold mb-2">Quantidade</label>
+                <input
+                  type="number"
+                  value={quantidade}
+                  onChange={(e) => setQuantidade(parseInt(e.target.value) || 1)}
+                  min="1"
+                  className="w-full text-lg"
+                  data-testid="input-quantidade"
+                />
+              </div>
+            </div>
+
+            {ultimaLeitura && (
+              <div className={`mt-4 p-4 rounded border-2 ${
+                ultimaLeitura.resultado === 'ok' ? 'border-green-600 bg-green-100' :
+                ultimaLeitura.resultado === 'diferenca' ? 'border-red-600 bg-red-100' :
+                'border-red-900 bg-red-200'
+              }`} data-testid="ultima-leitura">
+                <p className="font-bold">
+                  {ultimaLeitura.resultado === 'ok' ? '✅ Leitura OK' :
+                   ultimaLeitura.resultado === 'diferenca' ? '⚠️ Diferença detectada' :
+                   '🚫 EAN fora da lista'}
+                </p>
+                <p className="text-sm mt-1">EAN: {ultimaLeitura.ean} • Qtd: {ultimaLeitura.quantidade}</p>
+              </div>
+            )}
+          </section>
+        )}
+
+        <section className="border-2 border-black p-6 rounded-lg">
+          <h2 className="text-xl font-bold mb-4">Itens da Carga</h2>
+          
+          <div className="overflow-x-auto">
+            <table data-testid="itens-table">
+              <thead>
+                <tr>
+                  {cargaAtual.tipo === 'multi' && <th>Recipiente</th>}
+                  <th>Código</th>
+                  <th>Descrição</th>
+                  <th>Unidade</th>
+                  <th>Esperado</th>
+                  <th>Conferido</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cargaAtual.itens.map((item, idx) => (
+                  <tr
+                    key={idx}
+                    className={`${
+                      item.status === 'ok' ? 'bg-green-100' :
+                      item.status === 'diferenca' ? 'bg-red-100' :
+                      ''
+                    }`}
+                    data-testid={`item-${idx}`}
+                  >
+                    {cargaAtual.tipo === 'multi' && <td className="font-semibold">{item.recipiente}</td>}
+                    <td className="font-mono">{item.codigo_produto}</td>
+                    <td>{item.descricao}</td>
+                    <td className="text-center">{item.unidade}</td>
+                    <td className="text-center font-semibold">{item.quantidade}</td>
+                    <td className="text-center font-semibold">{item.quantidade_conferida}</td>
+                    <td>
+                      <span className={`px-3 py-1 rounded text-sm font-semibold ${
+                        item.status === 'ok' ? 'status-ok' :
+                        item.status === 'diferenca' ? 'status-diferenca' :
+                        'status-pendente'
+                      }`}>
+                        {item.status === 'ok' ? 'OK' :
+                         item.status === 'diferenca' ? 'Diferença' : 'Pendente'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
