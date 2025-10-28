@@ -50,14 +50,19 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
     try {
       const response = await axios.get(`${API}/sessoes/ativa/${usuario.id}`);
       if (response.data) {
-        setSessaoAtiva(response.data);
-        const cargaResponse = await axios.get(`${API}/cargas/${response.data.carga_id}`);
-        setCargaSelecionada(cargaResponse.data);
+        if (response.data.status === 'pausada') {
+          setSessaoPausada(response.data);
+        } else {
+          setSessaoAtiva(response.data);
+          const cargaResponse = await axios.get(`${API}/cargas/${response.data.carga_id}`);
+          setCargaSelecionada(cargaResponse.data);
+        }
       }
     } catch (error) {
       console.error('Erro ao verificar sessão ativa:', error);
       // Se não tiver sessão ativa, limpa o estado
       setSessaoAtiva(null);
+      setSessaoPausada(null);
       setCargaSelecionada(null);
     }
   };
@@ -81,18 +86,53 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
     carregarCargas();
   };
 
-  const handleIniciarCarga = async (carga) => {
+  const handleIniciarCarga = (carga) => {
+    setCargaParaIniciar(carga);
+    
+    // Se for Multi, abrir modal de recipiente primeiro
+    if (carga.tipo === 'multi') {
+      setShowModalRecipiente(true);
+    } else {
+      // Se for Caixaria, abrir direto modal de confirmação
+      setShowModalIniciar(true);
+    }
+  };
+
+  const handleConfirmarRecipiente = (recipiente) => {
+    setRecipienteSelecionado(recipiente);
+    setShowModalRecipiente(false);
+    setShowModalIniciar(true);
+  };
+
+  const handleConfirmarInicio = async () => {
     try {
-      const response = await axios.post(`${API}/sessoes?conferente_id=${usuario.id}`, {
-        carga_id: carga.id
-      });
+      const payload = {
+        carga_id: cargaParaIniciar.id
+      };
+      
+      if (recipienteSelecionado) {
+        payload.recipiente = recipienteSelecionado;
+      }
+
+      const response = await axios.post(`${API}/sessoes?conferente_id=${usuario.id}`, payload);
       setSessaoAtiva(response.data);
-      setCargaSelecionada(carga);
+      setCargaSelecionada(cargaParaIniciar);
+      setShowModalIniciar(false);
+      setCargaParaIniciar(null);
+      setRecipienteSelecionado(null);
+      
       // Atualizar cargas após iniciar
       carregarCargas(true);
     } catch (error) {
       alert(error.response?.data?.detail || 'Erro ao iniciar carga');
     }
+  };
+
+  const handleCancelarInicio = () => {
+    setShowModalIniciar(false);
+    setShowModalRecipiente(false);
+    setCargaParaIniciar(null);
+    setRecipienteSelecionado(null);
   };
 
   const handleVoltarLista = () => {
