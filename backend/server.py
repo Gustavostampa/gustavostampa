@@ -1030,8 +1030,52 @@ async def resetar_banco(senha_admin: str):
     await db.cargas.delete_many({})
     await db.sessoes.delete_many({})
     await db.leituras.delete_many({})
+    await db.produto_eans.delete_many({})
     
     return {"message": "Banco resetado com sucesso"}
+
+@api_router.post("/admin/migrar-eans")
+async def migrar_eans_produtos():
+    """
+    Migra EANs da tabela produtos para produto_eans.
+    Cria um registro em produto_eans para cada produto existente.
+    """
+    produtos = await db.produtos.find({}, {"_id": 0}).to_list(10000)
+    
+    migrados = 0
+    erros = []
+    
+    for produto in produtos:
+        if not produto.get("ean"):
+            continue
+            
+        ean_normalizado = normalizar_ean(produto["ean"])
+        
+        # Verificar se já existe
+        existe = await db.produto_eans.find_one({"ean": ean_normalizado})
+        if existe:
+            erros.append(f"EAN {produto['ean']} já existe em produto_eans")
+            continue
+        
+        # Criar registro
+        produto_ean = ProdutoEAN(
+            sku=produto["codigo_produto"],
+            ean=ean_normalizado,
+            tipo_unidade=produto.get("tipo_unidade", "UNI"),
+            fator_conversao=1,  # Padrão: 1 unidade
+            descricao=produto.get("descricao"),
+            ativo=produto.get("ativo", True)
+        )
+        
+        await db.produto_eans.insert_one(produto_ean.model_dump())
+        migrados += 1
+    
+    return {
+        "message": f"Migração concluída",
+        "migrados": migrados,
+        "total_produtos": len(produtos),
+        "erros": erros
+    }
 
 # Inicialização
 @app.on_event("startup")
