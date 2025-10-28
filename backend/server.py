@@ -687,10 +687,16 @@ async def registrar_leitura(input: LeituraCreate, conferente_id: str):
     if not carga:
         raise HTTPException(status_code=404, detail="Carga não encontrada")
     
+    # Buscar sessão para pegar o recipiente (se Multi)
+    sessao = await db.sessoes.find_one({"id": input.sessao_id})
+    recipiente_sessao = sessao.get("recipiente") if sessao else None
+    
     # Validar EAN contra produtos
     produto = await db.produtos.find_one({"ean": input.ean})
     if not produto:
-        # EAN fora da lista
+        # EAN não existe no cadastro - Sobra
+        await registrar_sobra(input.carga_id, input.sessao_id, input.ean, input.quantidade, recipiente_sessao)
+        
         leitura = Leitura(
             sessao_id=input.sessao_id,
             carga_id=input.carga_id,
@@ -705,12 +711,20 @@ async def registrar_leitura(input: LeituraCreate, conferente_id: str):
     # Buscar item na carga
     item_idx = None
     for idx, item in enumerate(carga["itens"]):
-        if item["codigo_produto"] == produto["codigo_produto"]:
-            item_idx = idx
-            break
+        # Para Multi, considerar também o recipiente
+        if carga["tipo"] == "multi":
+            if item["codigo_produto"] == produto["codigo_produto"] and item.get("recipiente") == recipiente_sessao:
+                item_idx = idx
+                break
+        else:
+            if item["codigo_produto"] == produto["codigo_produto"]:
+                item_idx = idx
+                break
     
     if item_idx is None:
-        # Produto não está nesta carga
+        # Produto existe mas não está nesta carga/recipiente - Sobra
+        await registrar_sobra(input.carga_id, input.sessao_id, input.ean, input.quantidade, recipiente_sessao, produto["descricao"])
+        
         leitura = Leitura(
             sessao_id=input.sessao_id,
             carga_id=input.carga_id,
@@ -747,6 +761,35 @@ async def registrar_leitura(input: LeituraCreate, conferente_id: str):
     )
     await db.leituras.insert_one(leitura.model_dump())
     return leitura
+
+async def registrar_sobra(carga_id: str, sessao_id: str, ean: str, quantidade: int, recipiente: Optional[str] = None, descricao: Optional[str] = None):
+    # Buscar se já existe sobra deste EAN
+    filtro = {"carga_id": carga_id, "sessao_id": sessao_id, "ean": ean}
+    if recipiente:
+        filtro["recipiente"] = recipiente
+    
+    sobra_existente = await db.sobras.find_one(filtro)
+    
+    if sobra_existente:
+        # Atualizar quantidade e timestamp
+        await db.sobras.update_one(
+            {"id": sobra_existente["id"]},
+            {
+                "$inc": {"quantidade": quantidade},
+                "$set": {"ultima_leitura": datetime.now(timezone.utc).isoformat()}
+            }
+        )
+    else:
+        # Criar nova sobra
+        sobra = Sobra(
+            carga_id=carga_id,
+            sessao_id=sessao_id,
+            recipiente=recipiente,
+            ean=ean,
+            descricao=descricao,
+            quantidade=quantidade
+        )
+        await db.sobras.insert_one(sobra.model_dump())
 
 @api_router.get("/leituras/{sessao_id}", response_model=List[Leitura])
 async def listar_leituras(sessao_id: str):
