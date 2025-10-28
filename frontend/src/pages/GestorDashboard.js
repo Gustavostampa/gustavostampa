@@ -3,15 +3,21 @@ import axios from 'axios';
 import { API } from '../App';
 import ImportModal from '../components/ImportModal';
 import UsuariosModal from '../components/UsuariosModal';
-import { LogOut, Upload, Users, BarChart3, Trash2, RefreshCw } from 'lucide-react';
+import ProdutosScreen from './ProdutosScreen';
+import { LogOut, Upload, Users, BarChart3, Trash2, RefreshCw, Package } from 'lucide-react';
 
 export default function GestorDashboard({ usuario, onLogout }) {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showUsuariosModal, setShowUsuariosModal] = useState(false);
+  const [showProdutos, setShowProdutos] = useState(false);
   const [importType, setImportType] = useState(null);
   const [stats, setStats] = useState([]);
   const [filtros, setFiltros] = useState({ data: '', tipo: '', conferente_id: '' });
   const [usuarios, setUsuarios] = useState([]);
+
+  if (showProdutos) {
+    return <ProdutosScreen onVoltar={() => setShowProdutos(false)} />;
+  }
 
   useEffect(() => {
     carregarStats();
