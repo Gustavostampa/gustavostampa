@@ -93,13 +93,74 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
   };
 
   const handleFinalizar = async () => {
-    if (!window.confirm('Deseja finalizar esta conferência?')) {
+    // Se estiver pausada, perguntar se quer retomar
+    if (sessaoAtual.status === 'pausada') {
+      if (window.confirm('A carga está pausada. Deseja retomar e finalizar?')) {
+        await handleRetomar();
+        // Aguardar um pouco para o estado atualizar
+        setTimeout(() => {
+          setShowModalFinalizacao(true);
+        }, 500);
+      }
       return;
     }
 
+    // Verificar se há pelo menos 1 item conferido
+    const totalConferido = cargaAtual.itens.reduce((sum, item) => sum + item.quantidade_conferida, 0);
+    if (totalConferido === 0) {
+      alert('É necessário conferir pelo menos 1 item antes de finalizar.');
+      return;
+    }
+
+    // Abrir modal de finalização
+    setShowModalFinalizacao(true);
+  };
+
+  const handleReconferir = () => {
+    setShowModalFinalizacao(false);
+    setFiltrarDiferencas(true);
+  };
+
+  const handleAbrirReconferencia = (item) => {
+    setItemReconferencia(item);
+    setShowModalReconferencia(true);
+  };
+
+  const handleConfirmarReconferencia = async (item, novaQuantidade) => {
+    try {
+      // Calcular diferença
+      const diferenca = novaQuantidade - item.quantidade_conferida;
+      
+      if (diferenca !== 0) {
+        // Registrar ajuste como leitura
+        await axios.post(
+          `${API}/leituras?conferente_id=${usuario.id}`,
+          {
+            sessao_id: sessaoAtual.id,
+            carga_id: cargaAtual.id,
+            ean: item.ean || item.codigo_produto,
+            quantidade: diferenca > 0 ? diferenca : -diferenca
+          }
+        );
+      }
+
+      // Recarregar carga
+      await recarregarCarga();
+      setShowModalReconferencia(false);
+      setItemReconferencia(null);
+      alert('Reconferência registrada com sucesso!');
+    } catch (error) {
+      alert('Erro ao registrar reconferência');
+      console.error(error);
+    }
+  };
+
+  const handleFinalizarDefinitivo = async () => {
     try {
       await axios.post(`${API}/sessoes/${sessaoAtual.id}/finalizar`);
-      // Primeiro volta, depois mostra o alert
+      setShowModalFinalizacao(false);
+      
+      // Voltar e mostrar sucesso
       onVoltar();
       setTimeout(() => {
         alert('Conferência finalizada com sucesso!');
