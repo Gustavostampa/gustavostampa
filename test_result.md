@@ -330,7 +330,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Test DELETE /api/cargas/:id/itens/:itemId endpoint functionality"
+    - "Test GET /api/cargas endpoint format consistency"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
