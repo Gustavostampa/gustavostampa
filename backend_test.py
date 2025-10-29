@@ -161,8 +161,8 @@ class CargasEndpointTester:
         """Test 2: Empty result with future date"""
         print_header("TEST 2: Teste com resultado vazio")
         
-        print_info("Testing GET /api/cargas?dataInicio=2099-12-31 (future date)")
-        status_code, data = self.make_request("/cargas", {"dataInicio": "2099-12-31"})
+        print_info("Testing GET /api/cargas?data=2099-12-31 (future date)")
+        status_code, data = self.make_request("/cargas", {"data": "2099-12-31"})
         
         if status_code != 200:
             print_error(f"Expected status 200 OK, got {status_code}")
