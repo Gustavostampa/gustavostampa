@@ -661,7 +661,7 @@ async def listar_cargas_collection(
     
     try:
         # Log requisição
-        logger.debug(f"[GET /api/cargas] path=/api/cargas, query={{status:{status}, tipo:{tipo}, dataInicio:{dataInicio}, dataFim:{dataFim}, page:{page}, pageSize:{pageSize}}}")
+        logger.debug(f"[GET /api/cargas] path=/api/cargas, query={{status:{status}, tipo:{tipo}, data:{data}, dataInicio:{dataInicio}, dataFim:{dataFim}, page:{page}, pageSize:{pageSize}}}")
         logger.debug(f"[GET /api/cargas] role=gestor (assumido - sem auth implementado)")
         
         # Construir filtro
