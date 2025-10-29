@@ -159,49 +159,75 @@ class CargaItemDeletionTester:
         self.test_results.append(("Setup", True, "✅ Test data prepared"))
         return True
     
-    def test_status_filters(self):
-        """Test 2: Status filtering"""
-        print_header("TEST 2: Status Filtering")
+    def test_successful_deletion(self):
+        """Test 1: Successful item deletion"""
+        print_header("TEST 1: Teste de exclusão bem-sucedida")
         
-        # Test single status
-        test_cases = [
-            ("finalizada", "Single status: finalizada"),
-            ("em_andamento", "Single status: em_andamento"),
-            ("pausada", "Single status: pausada"),
-            ("em_andamento,pausada", "Multiple status: em_andamento,pausada")
-        ]
+        if not self.test_carga_id:
+            print_error("No test carga available")
+            self.test_results.append(("Successful Deletion", False, "❌ No test data"))
+            return False
         
-        all_passed = True
+        # Get current carga state
+        status_code, carga_before = self.make_request(f"/cargas/{self.test_carga_id}")
+        if status_code != 200:
+            print_error(f"Failed to get carga before deletion: {status_code}")
+            self.test_results.append(("Successful Deletion", False, "❌ Could not get carga"))
+            return False
         
-        for status_value, description in test_cases:
-            print_info(f"Testing {description}")
-            status_code, data = self.make_request("/cargas", {"status": status_value})
+        total_before = len(carga_before.get('itens', []))
+        print_info(f"Total items before deletion: {total_before}")
+        
+        if total_before == 0:
+            print_error("No items to delete")
+            self.test_results.append(("Successful Deletion", False, "❌ No items available"))
+            return False
+        
+        # Delete first item (index 0)
+        print_info(f"Deleting first item (index 0) from carga {self.test_carga_id}")
+        status_code, response = self.make_delete_request(f"/cargas/{self.test_carga_id}/itens/0")
+        
+        if status_code == 200:
+            print_success("Status 200 OK received")
             
+            # Validate response structure
+            required_fields = ["ok", "message", "item_removido", "total_itens_antes", "total_itens_depois"]
+            for field in required_fields:
+                if field not in response:
+                    print_error(f"Missing field in response: {field}")
+                    self.test_results.append(("Successful Deletion", False, f"❌ Missing field: {field}"))
+                    return False
+            
+            # Validate totals
+            if response["total_itens_depois"] != response["total_itens_antes"] - 1:
+                print_error(f"Total items calculation wrong: {response['total_itens_antes']} -> {response['total_itens_depois']}")
+                self.test_results.append(("Successful Deletion", False, "❌ Wrong total calculation"))
+                return False
+            
+            print_success(f"Item removed: {response['item_removido'].get('codigo_produto')} - {response['item_removido'].get('descricao')}")
+            print_success(f"Total items: {response['total_itens_antes']} -> {response['total_itens_depois']}")
+            
+            # Verify carga was updated
+            status_code, carga_after = self.make_request(f"/cargas/{self.test_carga_id}")
             if status_code == 200:
-                is_valid, msg = self.validate_cargas_response_structure(data)
-                if is_valid:
-                    print_success(f"{description} - OK (found {data['total']} cargas)")
-                    
-                    # Validate that returned cargas match the filter
-                    if data['cargas']:
-                        expected_statuses = [s.strip() for s in status_value.split(',')]
-                        for carga in data['cargas']:
-                            if carga.get('status') not in expected_statuses:
-                                print_error(f"Carga {carga.get('identificador_carga')} has status {carga.get('status')}, expected one of {expected_statuses}")
-                                all_passed = False
+                total_after = len(carga_after.get('itens', []))
+                if total_after == total_before - 1:
+                    print_success(f"Carga updated correctly: {total_before} -> {total_after} items")
+                    self.test_results.append(("Successful Deletion", True, "✅ Item deleted successfully"))
+                    return True
                 else:
-                    print_error(f"{description} - Invalid structure: {msg}")
-                    all_passed = False
+                    print_error(f"Carga not updated correctly: expected {total_before - 1}, got {total_after}")
+                    self.test_results.append(("Successful Deletion", False, "❌ Carga not updated"))
+                    return False
             else:
-                print_error(f"{description} - Status {status_code}")
-                all_passed = False
-        
-        if all_passed:
-            self.test_results.append(("Status Filtering", True, "✅ All status filters working"))
+                print_error("Could not verify carga after deletion")
+                self.test_results.append(("Successful Deletion", False, "❌ Could not verify update"))
+                return False
         else:
-            self.test_results.append(("Status Filtering", False, "❌ Some status filters failed"))
-        
-        return all_passed
+            print_error(f"Expected status 200, got {status_code}")
+            print_error(f"Response: {response}")
+            self.test_results.append(("Successful Deletion", False, f"❌ Status {status_code}"))
+            return False
     
     def test_tipo_filters(self):
         """Test 3: Tipo filtering"""
