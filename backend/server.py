@@ -638,76 +638,95 @@ async def importar_multi(file: UploadFile = File(...), acao: str = Form("substit
 
 # Cargas
 @api_router.get("/cargas")
-async def listar_cargas(
-    page: int = 1,
-    pageSize: int = 20,
+async def listar_cargas_collection(
     status: Optional[str] = None,
     tipo: Optional[str] = None,
     dataInicio: Optional[str] = None,
-    dataFim: Optional[str] = None
+    dataFim: Optional[str] = None,
+    page: int = 1,
+    pageSize: int = 20
 ):
     """
-    Lista cargas com filtros opcionais e paginação.
+    Lista coleção de cargas. NUNCA retorna 404.
+    Sempre retorna 200 com { total, page, pageSize, cargas }.
     
-    Defaults:
-    - page=1, pageSize=20
-    - status=["aberta","pausada","finalizada"] quando não informado
+    Comportamento:
+    - Sem filtros = retorna TODAS (abertas, pausadas, finalizadas)
     - Gestor vê TODAS as cargas (sem filtro por conferente)
+    - Vazio = { total: 0, cargas: [] } com status 200
     """
     import logging
     logger = logging.getLogger(__name__)
     
-    # Log query recebida
-    logger.debug(f"[GET /api/cargas] Query params: page={page}, pageSize={pageSize}, status={status}, tipo={tipo}, dataInicio={dataInicio}, dataFim={dataFim}")
-    
-    # Construir filtro
-    filtro = {}
-    
-    # Status: default para todas exceto pendente
-    if status:
-        # Aceitar string separada por vírgula ou único valor
-        status_list = [s.strip() for s in status.split(',') if s.strip()]
-        if status_list:
-            filtro["status"] = {"$in": status_list}
-    else:
-        # Default: abertas, pausadas e finalizadas
-        filtro["status"] = {"$in": ["pendente", "aberta", "em_andamento", "pausada", "finalizada"]}
-    
-    # Tipo
-    if tipo:
-        filtro["tipo"] = tipo
-    
-    # Data
-    if dataInicio or dataFim:
-        filtro["data"] = {}
-        if dataInicio:
-            filtro["data"]["$gte"] = dataInicio
-        if dataFim:
-            filtro["data"]["$lte"] = dataFim
-    
-    logger.debug(f"[GET /api/cargas] Filtro Mongo gerado: {filtro}")
-    
-    # Calcular skip
-    skip = (page - 1) * pageSize
-    
-    # Buscar cargas e total em paralelo
-    cargas_cursor = db.cargas.find(filtro, {"_id": 0}).sort("data", -1).skip(skip).limit(pageSize)
-    cargas = await cargas_cursor.to_list(pageSize)
-    total = await db.cargas.count_documents(filtro)
-    
-    # Adicionar total_itens se não existir
-    for carga in cargas:
-        if "total_itens" not in carga:
-            carga["total_itens"] = len(carga.get("itens", []))
-    
-    logger.debug(f"[GET /api/cargas] Total encontrado: {total}, Retornando: {len(cargas)} cargas")
-    
-    return {
-        "total": total,
-        "page": page,
-        "pageSize": pageSize,
-        "cargas": cargas
-    }
+    try:
+        # Log requisição
+        logger.debug(f"[GET /api/cargas] path=/api/cargas, query={{status:{status}, tipo:{tipo}, dataInicio:{dataInicio}, dataFim:{dataFim}, page:{page}, pageSize:{pageSize}}}")
+        logger.debug(f"[GET /api/cargas] role=gestor (assumido - sem auth implementado)")
+        
+        # Construir filtro
+        filtro = {}
+        
+        # Status: default para todas
+        if status:
+            status_list = [s.strip() for s in status.split(',') if s.strip()]
+            if status_list:
+                filtro["status"] = {"$in": status_list}
+                logger.debug(f"[GET /api/cargas] Filtro status aplicado: {status_list}")
+        else:
+            # Default: todas menos pendente inicial
+            filtro["status"] = {"$in": ["pendente", "aberta", "em_andamento", "pausada", "finalizada"]}
+            logger.debug(f"[GET /api/cargas] Filtro status default: all")
+        
+        # Tipo
+        if tipo:
+            filtro["tipo"] = tipo
+            logger.debug(f"[GET /api/cargas] Filtro tipo aplicado: {tipo}")
+        
+        # Data
+        if dataInicio or dataFim:
+            filtro["data"] = {}
+            if dataInicio:
+                filtro["data"]["$gte"] = dataInicio
+                logger.debug(f"[GET /api/cargas] Filtro dataInicio: {dataInicio}")
+            if dataFim:
+                filtro["data"]["$lte"] = dataFim
+                logger.debug(f"[GET /api/cargas] Filtro dataFim: {dataFim}")
+        
+        # IMPORTANTE: NÃO filtrar por conferente_id quando role=gestor
+        logger.debug(f"[GET /api/cargas] Filtro Mongo final: {filtro}")
+        
+        # Calcular skip
+        skip = (page - 1) * pageSize
+        
+        # Buscar cargas e total em paralelo
+        cargas_cursor = db.cargas.find(filtro, {"_id": 0}).sort([("data", -1), ("id", -1)]).skip(skip).limit(pageSize)
+        cargas = await cargas_cursor.to_list(pageSize)
+        total = await db.cargas.count_documents(filtro)
+        
+        # Adicionar total_itens se não existir
+        for carga in cargas:
+            if "total_itens" not in carga:
+                carga["total_itens"] = len(carga.get("itens", []))
+        
+        logger.debug(f"[GET /api/cargas] Total encontrado: {total}, Retornando: {len(cargas)} cargas")
+        
+        # SEMPRE retorna 200, mesmo quando vazio
+        return {
+            "total": total,
+            "page": page,
+            "pageSize": pageSize,
+            "cargas": cargas
+        }
+        
+    except Exception as e:
+        # Em caso de erro, retorna 500 (não 404!)
+        logger.error(f"[GET /api/cargas] Erro interno: {str(e)}", exc_info=True)
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=500,
+            detail={"erro": "internal_error", "detalhe": str(e)}
+        )
+
 @api_router.post("/admin/seed-cargas")
 async def seed_cargas_dev():
     """
