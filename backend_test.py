@@ -457,11 +457,12 @@ class MultiPedidosTester:
         
         # Run all tests
         tests = [
-            self.test_structured_response,
-            self.test_empty_result,
-            self.test_filters_conferente,
-            self.test_multiple_results,
-            self.test_critical_validation
+            self.test_multi_cargas_exist,
+            self.test_no_filter_default_conferente,
+            self.test_explicit_multi_filter,
+            self.test_caixaria_filter,
+            self.test_conferente_status_visibility,
+            self.test_tipo_field_naming
         ]
         
         passed_tests = 0
