@@ -101,6 +101,12 @@ class CargasEndpointTester:
         
         if not isinstance(data["total"], int):
             return False, "total field must be an integer"
+        
+        if not isinstance(data["page"], int):
+            return False, "page field must be an integer"
+        
+        if not isinstance(data["pageSize"], int):
+            return False, "pageSize field must be an integer"
             
         return True, "Structure is valid"
     
