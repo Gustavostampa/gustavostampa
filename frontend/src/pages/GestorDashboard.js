@@ -207,6 +207,15 @@ export default function GestorDashboard({ usuario, onLogout }) {
           </button>
           
           <button
+            onClick={() => setShowGerenciarCargas(true)}
+            className="btn-primary p-3 flex items-center justify-center gap-2 text-sm"
+            data-testid="btn-gerenciar-cargas"
+          >
+            <ClipboardList size={18} />
+            <span>Gerenciar Cargas</span>
+          </button>
+          
+          <button
             onClick={() => setShowUsuariosModal(true)}
             className="btn-secondary p-3 flex items-center justify-center gap-2 text-sm"
             data-testid="btn-usuarios"
