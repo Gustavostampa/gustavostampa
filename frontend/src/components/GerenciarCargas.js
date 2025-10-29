@@ -175,7 +175,7 @@ export default function GerenciarCargas({ onVoltar }) {
           <div className="flex items-end gap-2">
             <button
               onClick={() => setFiltros({ data: '', tipo: '', status: '' })}
-              className="btn-outline flex-1"
+              className="btn-outline"
               data-testid="btn-limpar-filtros"
             >
               Limpar Filtros
@@ -183,7 +183,7 @@ export default function GerenciarCargas({ onVoltar }) {
             <button
               onClick={carregarCargas}
               disabled={loading}
-              className="btn-primary flex items-center gap-2 flex-1"
+              className="btn-primary flex items-center gap-2"
               data-testid="btn-recarregar"
             >
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
