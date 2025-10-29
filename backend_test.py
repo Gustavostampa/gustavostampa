@@ -367,44 +367,7 @@ class CargasEndpointTester:
             self.test_results.append(("Critical Validation", False, "❌ Critical validation failed"))
             return False
     
-    def test_integrity_validation(self):
-        """Test 5: Integrity validation after deletion"""
-        print_header("TEST 5: Validação de integridade")
-        
-        if not self.test_carga_id:
-            print_error("No test carga available")
-            self.test_results.append(("Integrity Validation", False, "❌ No test data"))
-            return False
-        
-        # Get carga state after previous deletion
-        print_info(f"Validating carga {self.test_carga_id} integrity after deletion")
-        status_code, carga = self.make_request(f"/cargas/{self.test_carga_id}")
-        
-        if status_code != 200:
-            print_error(f"Failed to get carga: {status_code}")
-            self.test_results.append(("Integrity Validation", False, "❌ Could not get carga"))
-            return False
-        
-        # Validate array integrity
-        itens = carga.get('itens', [])
-        total_itens = carga.get('total_itens', len(itens))
-        
-        if len(itens) == total_itens:
-            print_success(f"Array integrity OK: {len(itens)} items, total_itens: {total_itens}")
-        else:
-            print_error(f"Array integrity FAILED: {len(itens)} items, total_itens: {total_itens}")
-            self.test_results.append(("Integrity Validation", False, "❌ Array integrity failed"))
-            return False
-        
-        # Check if updated_at exists and is recent
-        updated_at = carga.get('updated_at')
-        if updated_at:
-            print_success(f"updated_at field present: {updated_at}")
-        else:
-            print_warning("updated_at field not present")
-        
-        self.test_results.append(("Integrity Validation", True, "✅ Integrity validation passed"))
-        return True
+    # Removed integrity validation test as it was for DELETE endpoint
     
     def test_debug_logs(self):
         """Test 6: Check for DEBUG logs in backend"""
