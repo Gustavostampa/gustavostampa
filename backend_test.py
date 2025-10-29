@@ -425,12 +425,13 @@ class CargaItemDeletionTester:
         print(f"\n{Colors.BOLD}OVERALL RESULT:{Colors.ENDC}")
         if passed == total:
             print_success(f"ALL TESTS PASSED ({passed}/{total})")
-            print_success("✅ GET /api/cargas endpoint is working correctly")
-            print_success("✅ No 404 errors found")
-            print_success("✅ All filtering and pagination working")
+            print_success("✅ DELETE /api/cargas/:id/itens/:itemId endpoint is working correctly")
+            print_success("✅ Item deletion with proper validations")
+            print_success("✅ Error handling for edge cases")
+            print_success("✅ Data integrity maintained")
         else:
             print_error(f"SOME TESTS FAILED ({passed}/{total})")
-            print_error("❌ Issues found with the endpoint")
+            print_error("❌ Issues found with the deletion endpoint")
 
 def main():
     """Main function"""
