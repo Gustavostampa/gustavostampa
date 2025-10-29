@@ -372,24 +372,28 @@ class CargaItemDeletionTester:
     
     def run_all_tests(self):
         """Run all tests"""
-        print_header("WMS SCANNER - GET /api/cargas ENDPOINT TESTING")
+        print_header("WMS SCANNER - DELETE /api/cargas/:id/itens/:itemId ENDPOINT TESTING")
         print_info(f"Backend URL: {BACKEND_URL}")
-        print_info("Testing the fixed endpoint that was causing 404 errors")
+        print_info("Testing item deletion functionality with validations, logs and error handling")
         
         # Authenticate
         if not self.authenticate():
             print_error("Authentication failed, stopping tests")
             return False
         
+        # Setup test data first
+        if not self.setup_test_data():
+            print_error("Setup failed, stopping tests")
+            return False
+        
         # Run all tests
         tests = [
-            self.test_basic_listing,
-            self.test_status_filters,
-            self.test_tipo_filters,
-            self.test_pagination,
-            self.test_date_filters,
-            self.test_empty_results,
-            self.test_individual_carga
+            self.test_successful_deletion,
+            self.test_finalized_carga_restriction,
+            self.test_nonexistent_item,
+            self.test_nonexistent_carga,
+            self.test_integrity_validation,
+            self.test_debug_logs
         ]
         
         passed_tests = 0
@@ -399,6 +403,7 @@ class CargaItemDeletionTester:
             try:
                 if test():
                     passed_tests += 1
+                time.sleep(0.5)  # Small delay between tests
             except Exception as e:
                 print_error(f"Test failed with exception: {e}")
         
