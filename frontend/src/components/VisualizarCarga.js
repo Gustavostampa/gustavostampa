@@ -182,8 +182,13 @@ export default function VisualizarCarga({ carga, onVoltar }) {
                       <td className="text-center">
                         <button
                           onClick={() => handleExcluirItem(item, idx)}
-                          className="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded transition-colors"
-                          title="Excluir item"
+                          disabled={excluindo}
+                          className={`p-2 rounded transition-colors ${
+                            excluindo
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-red-600 hover:text-red-800 hover:bg-red-50'
+                          }`}
+                          title={excluindo ? 'Aguarde...' : 'Excluir item'}
                           data-testid={`btn-excluir-${idx}`}
                         >
                           <Trash2 size={18} />
