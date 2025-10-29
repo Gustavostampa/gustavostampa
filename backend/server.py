@@ -639,40 +639,76 @@ async def importar_multi(file: UploadFile = File(...), acao: str = Form("substit
 # Cargas
 @api_router.get("/cargas")
 async def listar_cargas(
-    data: Optional[str] = None, 
-    tipo: Optional[str] = None, 
+    page: int = 1,
+    pageSize: int = 20,
     status: Optional[str] = None,
-    limit: int = 1000,
-    skip: int = 0
+    tipo: Optional[str] = None,
+    dataInicio: Optional[str] = None,
+    dataFim: Optional[str] = None
 ):
     """
-    Lista todas as cargas com filtros opcionais.
-    Retorna dados completos incluindo contagem de itens.
+    Lista cargas com filtros opcionais e paginação.
+    
+    Defaults:
+    - page=1, pageSize=20
+    - status=["aberta","pausada","finalizada"] quando não informado
+    - Gestor vê TODAS as cargas (sem filtro por conferente)
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Log query recebida
+    logger.debug(f"[GET /api/cargas] Query params: page={page}, pageSize={pageSize}, status={status}, tipo={tipo}, dataInicio={dataInicio}, dataFim={dataFim}")
+    
+    # Construir filtro
     filtro = {}
-    if data:
-        filtro["data"] = data
+    
+    # Status: default para todas exceto pendente
+    if status:
+        # Aceitar string separada por vírgula ou único valor
+        status_list = [s.strip() for s in status.split(',') if s.strip()]
+        if status_list:
+            filtro["status"] = {"$in": status_list}
+    else:
+        # Default: abertas, pausadas e finalizadas
+        filtro["status"] = {"$in": ["pendente", "aberta", "em_andamento", "pausada", "finalizada"]}
+    
+    # Tipo
     if tipo:
         filtro["tipo"] = tipo
-    if status:
-        filtro["status"] = status
     
-    # Buscar cargas com ordenação por data decrescente
-    cargas = await db.cargas.find(filtro, {"_id": 0}).sort("data", -1).skip(skip).limit(limit).to_list(limit)
+    # Data
+    if dataInicio or dataFim:
+        filtro["data"] = {}
+        if dataInicio:
+            filtro["data"]["$gte"] = dataInicio
+        if dataFim:
+            filtro["data"]["$lte"] = dataFim
     
-    # Contar total
+    logger.debug(f"[GET /api/cargas] Filtro Mongo gerado: {filtro}")
+    
+    # Calcular skip
+    skip = (page - 1) * pageSize
+    
+    # Buscar cargas e total em paralelo
+    cargas_cursor = db.cargas.find(filtro, {"_id": 0}).sort("data", -1).skip(skip).limit(pageSize)
+    cargas = await cargas_cursor.to_list(pageSize)
     total = await db.cargas.count_documents(filtro)
     
-    # Adicionar informações extras para cada carga
+    # Adicionar total_itens se não existir
     for carga in cargas:
-        carga["total_itens"] = len(carga.get("itens", []))
+        if "total_itens" not in carga:
+            carga["total_itens"] = len(carga.get("itens", []))
+    
+    logger.debug(f"[GET /api/cargas] Total encontrado: {total}, Retornando: {len(cargas)} cargas")
     
     return {
         "total": total,
-        "cargas": cargas,
-        "limit": limit,
-        "skip": skip
+        "page": page,
+        "pageSize": pageSize,
+        "cargas": cargas
     }
+
 
 
 @api_router.get("/cargas/ultima-atualizacao")
