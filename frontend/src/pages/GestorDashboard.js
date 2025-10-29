@@ -145,6 +145,10 @@ export default function GestorDashboard({ usuario, onLogout }) {
     return <ProdutosScreen onVoltar={() => setShowProdutos(false)} />;
   }
 
+  if (showGerenciarCargas) {
+    return <GerenciarCargas onVoltar={() => setShowGerenciarCargas(false)} />;
+  }
+
   if (showVisualizarCarga && cargaSelecionada) {
     return <VisualizarCarga carga={cargaSelecionada} onVoltar={handleVoltarVisualizacao} />;
   }
