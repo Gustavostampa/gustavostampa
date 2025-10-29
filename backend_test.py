@@ -421,13 +421,14 @@ class CargasEndpointTester:
         print(f"\n{Colors.BOLD}OVERALL RESULT:{Colors.ENDC}")
         if passed == total:
             print_success(f"ALL TESTS PASSED ({passed}/{total})")
-            print_success("✅ DELETE /api/cargas/:id/itens/:itemId endpoint is working correctly")
-            print_success("✅ Item deletion with proper validations")
-            print_success("✅ Error handling for edge cases")
-            print_success("✅ Data integrity maintained")
+            print_success("✅ GET /api/cargas endpoint returns consistent format")
+            print_success("✅ ALWAYS returns {total, page, pageSize, cargas} structure")
+            print_success("✅ NEVER returns 404 for empty results (returns 200 with empty array)")
+            print_success("✅ cargas field is ALWAYS an array (never null or string)")
+            print_success("✅ Frontend can safely use cargas.filter() without errors")
         else:
             print_error(f"SOME TESTS FAILED ({passed}/{total})")
-            print_error("❌ Issues found with the deletion endpoint")
+            print_error("❌ Issues found with the cargas endpoint format consistency")
 
 def main():
     """Main function"""
