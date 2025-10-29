@@ -167,10 +167,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Fix Continuar Conferência button"
-    - "Sobra UI - Tab interface and display"
+    - "Fix GET /api/cargas endpoint routing"
+    - "Fix duplicated /api/ prefix in URLs"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
