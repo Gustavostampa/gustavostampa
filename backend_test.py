@@ -268,16 +268,16 @@ class MultiPedidosTester:
         self.test_results.append(("Explicit Multi Filter", True, f"✅ Found {multi_count} Multi cargas only"))
         return True
     
-    def test_multiple_results(self):
-        """Test 4: Multiple results with status filter"""
-        print_header("TEST 4: Teste com múltiplos resultados")
+    def test_caixaria_filter(self):
+        """Test 4: Teste com filtro caixaria"""
+        print_header("TEST 4: Teste com filtro caixaria")
         
-        print_info("Testing GET /api/cargas?status=pausada,em_andamento")
-        status_code, data = self.make_request("/cargas", {"status": "pausada,em_andamento"})
+        print_info("Testing GET /api/cargas?data=2025-10-29&tipo=caixaria")
+        status_code, data = self.make_request("/cargas", {"data": "2025-10-29", "tipo": "caixaria"})
         
         if status_code != 200:
             print_error(f"Expected status 200, got {status_code}")
-            self.test_results.append(("Multiple Results", False, f"❌ Status {status_code}"))
+            self.test_results.append(("Caixaria Filter", False, f"❌ Status {status_code}"))
             return False
         
         print_success("Status 200 OK received")
@@ -286,38 +286,33 @@ class MultiPedidosTester:
         is_valid, message = self.validate_cargas_response_structure(data)
         if not is_valid:
             print_error(f"Structure validation failed: {message}")
-            self.test_results.append(("Multiple Results", False, f"❌ {message}"))
+            self.test_results.append(("Caixaria Filter", False, f"❌ {message}"))
             return False
         
         print_success("✅ Response structure consistent")
-        print_info(f"Total cargas found: {data['total']}")
+        print_info(f"Total Caixaria cargas found: {data['total']}")
         print_info(f"Cargas array length: {len(data['cargas'])}")
         
-        # Validate that cargas contains array of objects
-        if not isinstance(data["cargas"], list):
-            print_error("cargas field is not an array")
-            self.test_results.append(("Multiple Results", False, "❌ cargas is not an array"))
+        # Validate that only Caixaria cargas are returned
+        caixaria_count = 0
+        non_caixaria_count = 0
+        
+        for carga in data["cargas"]:
+            tipo = carga.get("tipo", "")
+            if tipo == "caixaria":
+                caixaria_count += 1
+                print_info(f"Caixaria carga: {carga.get('identificador_carga')} - Status: {carga.get('status')}")
+            else:
+                non_caixaria_count += 1
+                print_warning(f"Non-Caixaria carga found: {carga.get('identificador_carga')} - Tipo: {tipo}")
+        
+        if non_caixaria_count > 0:
+            print_error(f"Found {non_caixaria_count} non-Caixaria cargas when filtering by tipo=caixaria")
+            self.test_results.append(("Caixaria Filter", False, f"❌ Found {non_caixaria_count} non-Caixaria cargas"))
             return False
         
-        print_success("✅ cargas field is an array")
-        
-        # Validate each carga has required fields
-        if data["cargas"]:
-            for i, carga in enumerate(data["cargas"]):
-                required_fields = ["id", "identificador_carga", "tipo", "status", "data"]
-                for field in required_fields:
-                    if field not in carga:
-                        print_error(f"Carga {i} missing required field: {field}")
-                        self.test_results.append(("Multiple Results", False, f"❌ Missing field {field}"))
-                        return False
-                
-                # Check if status matches filter
-                if carga.get("status") not in ["pausada", "em_andamento"]:
-                    print_warning(f"Carga {carga.get('identificador_carga')} has status '{carga.get('status')}' (not in filter)")
-                else:
-                    print_info(f"Carga {carga.get('identificador_carga')}: status={carga.get('status')}, tipo={carga.get('tipo')}")
-        
-        self.test_results.append(("Multiple Results", True, "✅ Multiple results with proper structure"))
+        print_success(f"✅ Filter working correctly: {caixaria_count} Caixaria cargas only")
+        self.test_results.append(("Caixaria Filter", True, f"✅ Found {caixaria_count} Caixaria cargas only"))
         return True
     
     def test_critical_validation(self):
