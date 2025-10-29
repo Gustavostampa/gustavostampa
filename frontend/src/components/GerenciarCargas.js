@@ -17,6 +17,7 @@ export default function GerenciarCargas({ onVoltar }) {
 
   const carregarCargas = async () => {
     try {
+      setLoading(true);
       const params = {};
       if (filtros.data) params.data = filtros.data;
       if (filtros.tipo) params.tipo = filtros.tipo;
@@ -31,6 +32,8 @@ export default function GerenciarCargas({ onVoltar }) {
     } catch (error) {
       console.error('Erro ao carregar cargas:', error);
       console.error('Detalhes do erro:', error.response?.data);
+    } finally {
+      setLoading(false);
     }
   };
 
