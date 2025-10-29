@@ -432,14 +432,14 @@ class CargasEndpointTester:
 
 def main():
     """Main function"""
-    tester = CargaItemDeletionTester()
+    tester = CargasEndpointTester()
     success = tester.run_all_tests()
     
     if success:
-        print(f"\n{Colors.GREEN}{Colors.BOLD}🎉 ALL TESTS PASSED - DELETION ENDPOINT IS WORKING CORRECTLY{Colors.ENDC}")
+        print(f"\n{Colors.GREEN}{Colors.BOLD}🎉 ALL TESTS PASSED - GET /api/cargas ENDPOINT FORMAT IS CONSISTENT{Colors.ENDC}")
         sys.exit(0)
     else:
-        print(f"\n{Colors.RED}{Colors.BOLD}💥 SOME TESTS FAILED - ISSUES FOUND{Colors.ENDC}")
+        print(f"\n{Colors.RED}{Colors.BOLD}💥 SOME TESTS FAILED - FORMAT CONSISTENCY ISSUES FOUND{Colors.ENDC}")
         sys.exit(1)
 
 if __name__ == "__main__":
