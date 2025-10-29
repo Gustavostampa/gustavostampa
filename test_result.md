@@ -321,3 +321,84 @@ agent_communication:
       
       ===== PRÓXIMA TAREFA =====
       - Tarefa 3: Multi-pedidos melhorado (filtro recipiente)
+  
+  - agent: "main"
+    message: |
+      ===== TAREFA 3: MULTI-PEDIDOS MELHORADO (FILTRO RECIPIENTE) =====
+      ✅ COMPLETO
+      
+      Backend Implementado:
+      
+      1. Modelo Sessao Atualizado (linha 89-99)
+         - Novo campo: recipientes_finalizados (List[str])
+         - Track de recipientes já concluídos na sessão
+      
+      2. Endpoint GET /api/cargas/{id}/itens (linhas 636-658)
+         - Parâmetro opcional: recipiente_id
+         - Filtra itens por recipiente
+         - Retorna: carga_id, tipo, recipiente_filtrado, total_itens, itens
+      
+      3. Endpoint GET /api/cargas/{id}/recipientes (linhas 660-704)
+         - Lista todos recipientes únicos da carga
+         - Retorna progresso detalhado por recipiente:
+           * total_itens, itens_conferidos, itens_ok, itens_diferenca
+           * progresso percentual
+         - Ordenado alfabeticamente
+      
+      4. Endpoint POST /api/sessoes/{id}/finalizar-recipiente (linhas 852-879)
+         - Finaliza recipiente atual
+         - Adiciona à lista recipientes_finalizados
+         - Limpa recipiente ativo (recipiente = None)
+         - Retorna: mensagem, recipiente_finalizado, total_finalizados
+      
+      5. Endpoint POST /api/sessoes/{id}/trocar-recipiente (linhas 881-907)
+         - Troca recipiente ativo
+         - Parâmetro: novo_recipiente
+         - Valida se recipiente não foi finalizado
+         - Retorna: mensagem, recipiente_ativo
+      
+      Frontend Implementado:
+      
+      1. Estados Adicionados (ConferenciaScreen)
+         - showModalTrocarRecipiente: controla modal de seleção
+         - recipientesDisponiveis: lista com info de todos recipientes
+      
+      2. Funções Novas:
+         - carregarRecipientes(): busca info de todos recipientes
+         - handleFinalizarRecipiente(): finaliza recipiente atual
+         - handleTrocarRecipiente(): muda para novo recipiente
+      
+      3. Filtro Automático de Itens (linhas 263-273)
+         - Multi-pedidos: exibe APENAS itens do recipiente ativo
+         - Bloqueia visualmente itens de outros recipientes
+         - Mantém filtro de diferenças se ativo
+      
+      4. Botão "Finalizar Recipiente" (linhas 313-321)
+         - Visível APENAS em Multi-pedidos
+         - Só aparece se há recipiente ativo
+         - Ao lado do botão "Finalizar"
+      
+      5. Modal de Troca de Recipiente (linhas 614-666)
+         - Exibe recipientes ainda não finalizados
+         - Mostra progresso de cada recipiente:
+           * Total itens, % conferidos
+           * Itens OK, Diferenças
+         - Botão para cada recipiente disponível
+         - Mensagem se todos finalizados
+      
+      Fluxo Completo:
+      1. Usuário inicia Multi-pedido → seleciona recipiente inicial
+      2. Confere itens (apenas do recipiente ativo visíveis)
+      3. Clica "Finalizar Recipiente" → recipiente marcado como finalizado
+      4. Modal abre → seleciona próximo recipiente
+      5. Repete até todos recipientes finalizados
+      6. Clica "Finalizar" → finaliza carga completa
+      
+      Validações Implementadas:
+      ✅ Recipiente finalizado não pode ser reaberto
+      ✅ Itens de outros recipientes não aparecem
+      ✅ EAN de recipiente errado vai para "Sobra"
+      ✅ Progresso por recipiente visível
+      ✅ Botão só aparece se recipiente ativo
+      
+      ===== TODAS AS 3 TAREFAS CONCLUÍDAS =====
