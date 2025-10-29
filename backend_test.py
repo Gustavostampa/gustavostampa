@@ -39,11 +39,13 @@ def print_header(msg):
     print(f"{Colors.BOLD}{Colors.BLUE}{msg}{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.BLUE}{'='*60}{Colors.ENDC}")
 
-class CargasAPITester:
+class CargaItemDeletionTester:
     def __init__(self):
         self.session = requests.Session()
         self.auth_token = None
         self.test_results = []
+        self.test_carga_id = None
+        self.test_carga_finalizada_id = None
         
     def authenticate(self):
         """Authenticate with admin credentials if needed"""
