@@ -708,6 +708,66 @@ async def listar_cargas(
         "pageSize": pageSize,
         "cargas": cargas
     }
+@api_router.post("/admin/seed-cargas")
+async def seed_cargas_dev():
+    """
+    Seed temporário para validação em DEV.
+    Insere 3 cargas se a coleção estiver vazia.
+    """
+    count = await db.cargas.count_documents({})
+    if count > 0:
+        return {"message": f"Já existem {count} cargas no banco. Seed não executado."}
+    
+    from datetime import timedelta
+    hoje = datetime.now(timezone.utc)
+    
+    cargas_seed = [
+        {
+            "id": str(uuid.uuid4()),
+            "identificador_carga": "C-001",
+            "tipo": "caixaria",
+            "status": "pendente",
+            "data": hoje.strftime('%Y-%m-%d'),
+            "itens": [
+                {"codigo_produto": "P001", "descricao": "Produto 1", "ean": "1234567890123", "unidade": "UN", "quantidade": 10, "quantidade_conferida": 0, "status": "pendente"},
+                {"codigo_produto": "P002", "descricao": "Produto 2", "ean": "1234567890124", "unidade": "UN", "quantidade": 5, "quantidade_conferida": 0, "status": "pendente"}
+            ],
+            "conferente_id": None,
+            "conferente_nome": None
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "identificador_carga": "C-002",
+            "tipo": "multi",
+            "status": "pausada",
+            "data": (hoje - timedelta(days=1)).strftime('%Y-%m-%d'),
+            "itens": [
+                {"codigo_produto": "P003", "descricao": "Produto 3", "ean": "1234567890125", "unidade": "CX", "quantidade": 20, "quantidade_conferida": 10, "status": "diferenca", "recipiente": "R01"},
+                {"codigo_produto": "P004", "descricao": "Produto 4", "ean": "1234567890126", "unidade": "UN", "quantidade": 15, "quantidade_conferida": 15, "status": "ok", "recipiente": "R01"}
+            ],
+            "conferente_id": "conf-123",
+            "conferente_nome": "João Silva"
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "identificador_carga": "C-003",
+            "tipo": "caixaria",
+            "status": "finalizada",
+            "data": (hoje - timedelta(days=2)).strftime('%Y-%m-%d'),
+            "itens": [
+                {"codigo_produto": "P005", "descricao": "Produto 5", "ean": "1234567890127", "unidade": "UN", "quantidade": 8, "quantidade_conferida": 8, "status": "ok"}
+            ],
+            "conferente_id": "conf-456",
+            "conferente_nome": "Maria Santos"
+        }
+    ]
+    
+    result = await db.cargas.insert_many(cargas_seed)
+    
+    return {
+        "message": "Seed executado com sucesso",
+        "cargas_inseridas": len(result.inserted_ids)
+    }
 
 
 
