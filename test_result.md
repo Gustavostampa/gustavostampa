@@ -221,6 +221,75 @@ backend:
           
           **Backend DELETE API Status: FULLY FUNCTIONAL**
 
+  - task: "Test GET /api/cargas endpoint format consistency"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ COMPREHENSIVE GET /api/cargas ENDPOINT TESTING COMPLETED - ALL TESTS PASSED (5/5)
+          
+          **Test Request:** Testar o endpoint GET /api/cargas com diferentes cenários para validar que sempre retorna um formato consistente com array de cargas.
+          
+          **Context:** Bug corrigido no frontend ConferenceDashboard onde `cargas.filter is not a function` ocorria porque a API retornava `{total, page, pageSize, cargas}` mas o frontend tentava usar o objeto inteiro como array.
+          
+          **Tests Executed:**
+          
+          1. ✅ **Teste de resposta estruturada**
+             - GET /api/cargas (without filters)
+             - Status: 200 OK ✅
+             - Structure: {total: 14, page: 1, pageSize: 20, cargas: array[14]} ✅
+             - cargas is ALWAYS an array ✅
+             - Individual carga fields validated: id, identificador_carga, tipo, status, data, itens ✅
+          
+          2. ✅ **Teste com resultado vazio**
+             - GET /api/cargas?data=2099-12-31 (future date)
+             - Status: 200 OK (NEVER 404) ✅
+             - Response: {total: 0, page: 1, pageSize: 20, cargas: []} ✅
+             - cargas is empty array (not null or undefined) ✅
+          
+          3. ✅ **Teste com filtros (conferente usaria)**
+             - GET /api/cargas?data=2025-10-29&tipo=caixaria
+             - Status: 200 OK ✅
+             - Structure consistent: {total: 3, cargas: array[3]} ✅
+             - Filters working correctly ✅
+             - cargas is array ✅
+          
+          4. ✅ **Teste com múltiplos resultados**
+             - GET /api/cargas?status=pausada,em_andamento
+             - Status: 200 OK ✅
+             - Structure: {total: 3, cargas: array[3]} ✅
+             - Each carga has required fields: id, identificador_carga, tipo, status, data ✅
+             - Status filter working correctly ✅
+          
+          5. ✅ **Validação crítica - 7 cenários testados**
+             - Basic listing: ✅ (total: 14, cargas: 14)
+             - Status filter: ✅ (total: 11, cargas: 11)
+             - Tipo filter: ✅ (total: 5, cargas: 5)
+             - Date range: ✅ (total: 0, cargas: 0)
+             - Pagination: ✅ (total: 14, cargas: 5)
+             - Combined filters: ✅ (total: 1, cargas: 1)
+             - Non-existent status: ✅ (total: 0, cargas: 0)
+          
+          **CRITICAL VALIDATIONS PASSED:**
+          ✅ ALWAYS returns 200 OK (NEVER 404 for empty results)
+          ✅ ALWAYS returns {total, page, pageSize, cargas} structure
+          ✅ cargas field is ALWAYS an array (never null, string, or direct array)
+          ✅ NEVER returns just array directly (always wrapped in object)
+          ✅ Frontend can safely use cargas.filter() without errors
+          ✅ All filters working: status, tipo, data, dataInicio, dataFim, pagination
+          
+          **ENHANCEMENT IMPLEMENTED:**
+          ✅ Added support for 'data' parameter (exact date match) in addition to dataInicio/dataFim
+          ✅ Conferente can now use GET /api/cargas?data=2025-10-29 for specific date filtering
+          
+          **Backend GET /api/cargas API Status: FULLY FUNCTIONAL & CONSISTENT**
+
 frontend:
   - task: "Fix duplicated /api/ prefix in URLs"
     implemented: true
