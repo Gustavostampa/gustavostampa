@@ -40,7 +40,7 @@ def print_header(msg):
     print(f"{Colors.BOLD}{Colors.BLUE}{msg}{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.BLUE}{'='*60}{Colors.ENDC}")
 
-class CargasEndpointTester:
+class MultiPedidosTester:
     def __init__(self):
         self.session = requests.Session()
         self.auth_token = None
