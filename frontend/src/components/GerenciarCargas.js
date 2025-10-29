@@ -9,6 +9,7 @@ export default function GerenciarCargas({ onVoltar }) {
   const [filtros, setFiltros] = useState({ data: '', tipo: '', status: '' });
   const [cargaSelecionada, setCargaSelecionada] = useState(null);
   const [showVisualizarCarga, setShowVisualizarCarga] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     carregarCargas();
