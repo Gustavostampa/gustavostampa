@@ -243,34 +243,57 @@ class CargasEndpointTester:
         self.test_results.append(("Filters Conferente", True, "✅ Filters working with consistent structure"))
         return True
     
-    def test_nonexistent_item(self):
-        """Test 3: Nonexistent item"""
-        print_header("TEST 3: Teste com item inexistente")
+    def test_multiple_results(self):
+        """Test 4: Multiple results with status filter"""
+        print_header("TEST 4: Teste com múltiplos resultados")
         
-        if not self.test_carga_id:
-            print_error("No test carga available")
-            self.test_results.append(("Nonexistent Item", False, "❌ No test data"))
+        print_info("Testing GET /api/cargas?status=pausada,em_andamento")
+        status_code, data = self.make_request("/cargas", {"status": "pausada,em_andamento"})
+        
+        if status_code != 200:
+            print_error(f"Expected status 200, got {status_code}")
+            self.test_results.append(("Multiple Results", False, f"❌ Status {status_code}"))
             return False
         
-        print_info(f"Attempting to delete nonexistent item (index 9999) from carga {self.test_carga_id}")
-        status_code, response = self.make_delete_request(f"/cargas/{self.test_carga_id}/itens/9999")
+        print_success("Status 200 OK received")
         
-        if status_code == 404:
-            print_success("Status 404 Not Found received (correct)")
-            
-            if "detail" in response and "não encontrado" in response["detail"]:
-                print_success(f"Correct error message: {response['detail']}")
-                self.test_results.append(("Nonexistent Item", True, "✅ Nonexistent item handling working"))
-                return True
-            else:
-                print_error(f"Wrong error message: {response}")
-                self.test_results.append(("Nonexistent Item", False, "❌ Wrong error message"))
-                return False
-        else:
-            print_error(f"Expected status 404, got {status_code}")
-            print_error(f"Response: {response}")
-            self.test_results.append(("Nonexistent Item", False, f"❌ Status {status_code}"))
+        # Validate structure
+        is_valid, message = self.validate_cargas_response_structure(data)
+        if not is_valid:
+            print_error(f"Structure validation failed: {message}")
+            self.test_results.append(("Multiple Results", False, f"❌ {message}"))
             return False
+        
+        print_success("✅ Response structure consistent")
+        print_info(f"Total cargas found: {data['total']}")
+        print_info(f"Cargas array length: {len(data['cargas'])}")
+        
+        # Validate that cargas contains array of objects
+        if not isinstance(data["cargas"], list):
+            print_error("cargas field is not an array")
+            self.test_results.append(("Multiple Results", False, "❌ cargas is not an array"))
+            return False
+        
+        print_success("✅ cargas field is an array")
+        
+        # Validate each carga has required fields
+        if data["cargas"]:
+            for i, carga in enumerate(data["cargas"]):
+                required_fields = ["id", "identificador_carga", "tipo", "status", "data"]
+                for field in required_fields:
+                    if field not in carga:
+                        print_error(f"Carga {i} missing required field: {field}")
+                        self.test_results.append(("Multiple Results", False, f"❌ Missing field {field}"))
+                        return False
+                
+                # Check if status matches filter
+                if carga.get("status") not in ["pausada", "em_andamento"]:
+                    print_warning(f"Carga {carga.get('identificador_carga')} has status '{carga.get('status')}' (not in filter)")
+                else:
+                    print_info(f"Carga {carga.get('identificador_carga')}: status={carga.get('status')}, tipo={carga.get('tipo')}")
+        
+        self.test_results.append(("Multiple Results", True, "✅ Multiple results with proper structure"))
+        return True
     
     def test_nonexistent_carga(self):
         """Test 4: Nonexistent carga"""
