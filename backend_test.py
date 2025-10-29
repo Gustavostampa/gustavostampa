@@ -126,38 +126,38 @@ class CargaItemDeletionTester:
             
         return True, "Structure is valid"
     
-    def test_basic_listing(self):
-        """Test 1: Basic listing without filters"""
-        print_header("TEST 1: Basic Listing (GET /api/cargas)")
+    def setup_test_data(self):
+        """Setup: Get editable carga for testing"""
+        print_header("SETUP: Obter carga editável")
         
-        status_code, data = self.make_request("/cargas")
+        # Get cargas with status 'aberta' or 'pausada' that have items
+        status_code, data = self.make_request("/cargas", {"status": "aberta,pausada"})
         
-        if status_code == 200:
-            print_success("Status 200 OK received")
-            
-            is_valid, msg = self.validate_cargas_response_structure(data)
-            if is_valid:
-                print_success(f"Response structure is valid: {msg}")
-                print_info(f"Total cargas: {data['total']}")
-                print_info(f"Returned cargas: {len(data['cargas'])}")
-                print_info(f"Page: {data['page']}, PageSize: {data['pageSize']}")
-                
-                # Show sample carga if available
-                if data['cargas']:
-                    sample = data['cargas'][0]
-                    print_info(f"Sample carga: {sample.get('identificador_carga', 'N/A')} - {sample.get('status', 'N/A')}")
-                
-                self.test_results.append(("Basic Listing", True, "✅ Working correctly"))
-                return True
-            else:
-                print_error(f"Invalid response structure: {msg}")
-                self.test_results.append(("Basic Listing", False, f"❌ Invalid structure: {msg}"))
-                return False
-        else:
-            print_error(f"Expected status 200, got {status_code}")
-            print_error(f"Response: {data}")
-            self.test_results.append(("Basic Listing", False, f"❌ Status {status_code}"))
+        if status_code == 200 and data.get('cargas'):
+            for carga in data['cargas']:
+                if carga.get('itens') and len(carga['itens']) > 0:
+                    self.test_carga_id = carga['id']
+                    print_success(f"Found editable carga: {carga.get('identificador_carga')} (ID: {self.test_carga_id})")
+                    print_info(f"Status: {carga.get('status')}, Total items: {len(carga['itens'])}")
+                    print_info(f"First item: {carga['itens'][0].get('codigo_produto')} - {carga['itens'][0].get('descricao')}")
+                    break
+        
+        # Get a finalized carga for testing restrictions
+        status_code, data = self.make_request("/cargas", {"status": "finalizada"})
+        if status_code == 200 and data.get('cargas'):
+            for carga in data['cargas']:
+                if carga.get('itens') and len(carga['itens']) > 0:
+                    self.test_carga_finalizada_id = carga['id']
+                    print_success(f"Found finalized carga: {carga.get('identificador_carga')} (ID: {self.test_carga_finalizada_id})")
+                    break
+        
+        if not self.test_carga_id:
+            print_error("No editable carga found with items")
+            self.test_results.append(("Setup", False, "❌ No editable carga available"))
             return False
+        
+        self.test_results.append(("Setup", True, "✅ Test data prepared"))
+        return True
     
     def test_status_filters(self):
         """Test 2: Status filtering"""
