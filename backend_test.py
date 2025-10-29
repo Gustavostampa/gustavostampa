@@ -212,16 +212,16 @@ class MultiPedidosTester:
         self.test_results.append(("No Filter Default", True, f"✅ Found {caixaria_count} caixaria + {multi_count} multi"))
         return True
     
-    def test_filters_conferente(self):
-        """Test 3: Filters that conferente would use"""
-        print_header("TEST 3: Teste com filtros (conferente usaria)")
+    def test_explicit_multi_filter(self):
+        """Test 3: Teste com filtro multi explícito"""
+        print_header("TEST 3: Teste com filtro multi explícito")
         
-        print_info("Testing GET /api/cargas?data=2025-10-29&tipo=caixaria")
-        status_code, data = self.make_request("/cargas", {"data": "2025-10-29", "tipo": "caixaria"})
+        print_info("Testing GET /api/cargas?data=2025-10-29&tipo=multi")
+        status_code, data = self.make_request("/cargas", {"data": "2025-10-29", "tipo": "multi"})
         
         if status_code != 200:
             print_error(f"Expected status 200, got {status_code}")
-            self.test_results.append(("Filters Conferente", False, f"❌ Status {status_code}"))
+            self.test_results.append(("Explicit Multi Filter", False, f"❌ Status {status_code}"))
             return False
         
         print_success("Status 200 OK received")
@@ -230,30 +230,42 @@ class MultiPedidosTester:
         is_valid, message = self.validate_cargas_response_structure(data)
         if not is_valid:
             print_error(f"Structure validation failed: {message}")
-            self.test_results.append(("Filters Conferente", False, f"❌ {message}"))
+            self.test_results.append(("Explicit Multi Filter", False, f"❌ {message}"))
             return False
         
-        print_success("✅ Response structure consistent with filters")
-        print_info(f"Total cargas found: {data['total']}")
+        print_success("✅ Response structure consistent")
+        print_info(f"Total Multi cargas found: {data['total']}")
         print_info(f"Cargas array length: {len(data['cargas'])}")
         
-        # Validate that cargas is ALWAYS an array
-        if not isinstance(data["cargas"], list):
-            print_error("cargas field is not an array")
-            self.test_results.append(("Filters Conferente", False, "❌ cargas is not an array"))
+        # Validate that only Multi cargas are returned
+        multi_count = 0
+        non_multi_count = 0
+        
+        for carga in data["cargas"]:
+            tipo = carga.get("tipo", "")
+            if tipo in ["multi", "Multi-Pedidos", "multi_pedidos"]:
+                multi_count += 1
+                print_info(f"Multi carga: {carga.get('identificador_carga')} - Tipo: {tipo} - Status: {carga.get('status')}")
+                
+                # Validate structure of Multi carga objects
+                required_fields = ["id", "identificador_carga", "tipo", "status", "data", "itens"]
+                for field in required_fields:
+                    if field not in carga:
+                        print_warning(f"Multi carga missing field: {field}")
+                    else:
+                        if field == "itens" and isinstance(carga[field], list):
+                            print_info(f"Multi carga has {len(carga[field])} items")
+            else:
+                non_multi_count += 1
+                print_warning(f"Non-Multi carga found: {carga.get('identificador_carga')} - Tipo: {tipo}")
+        
+        if non_multi_count > 0:
+            print_error(f"Found {non_multi_count} non-Multi cargas when filtering by tipo=multi")
+            self.test_results.append(("Explicit Multi Filter", False, f"❌ Found {non_multi_count} non-Multi cargas"))
             return False
         
-        print_success("✅ cargas field is an array")
-        
-        # If results exist, validate they match the filter
-        if data["cargas"]:
-            for carga in data["cargas"]:
-                if carga.get("tipo") != "caixaria":
-                    print_warning(f"Found carga with tipo '{carga.get('tipo')}' instead of 'caixaria'")
-                else:
-                    print_info(f"Carga {carga.get('identificador_carga')} has correct tipo: {carga.get('tipo')}")
-        
-        self.test_results.append(("Filters Conferente", True, "✅ Filters working with consistent structure"))
+        print_success(f"✅ Filter working correctly: {multi_count} Multi cargas only")
+        self.test_results.append(("Explicit Multi Filter", True, f"✅ Found {multi_count} Multi cargas only"))
         return True
     
     def test_multiple_results(self):
