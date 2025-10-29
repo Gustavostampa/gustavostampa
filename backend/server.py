@@ -155,6 +155,43 @@ def normalizar_ean(ean: str) -> str:
     # Armazena sempre como 14 dígitos (GTIN-14 é o padrão mais amplo)
     return ean_limpo.zfill(14)
 
+def normalizar_data(data_input) -> str:
+    """
+    Normaliza data para formato YYYY-MM-DD.
+    Aceita: datetime, date, string (vários formatos)
+    """
+    if not data_input:
+        return ""
+    
+    # Se já é datetime
+    if isinstance(data_input, datetime):
+        return data_input.strftime('%Y-%m-%d')
+    
+    # Se é string
+    data_str = str(data_input).strip()
+    
+    # Remove timestamp se existir
+    if ' ' in data_str:
+        data_str = data_str.split(' ')[0]
+    
+    # Tentar parsear diferentes formatos
+    formatos = [
+        '%Y-%m-%d',  # 2024-01-28
+        '%d/%m/%Y',  # 28/01/2024
+        '%d-%m-%Y',  # 28-01-2024
+        '%Y/%m/%d',  # 2024/01/28
+    ]
+    
+    for formato in formatos:
+        try:
+            dt = datetime.strptime(data_str, formato)
+            return dt.strftime('%Y-%m-%d')
+        except:
+            continue
+    
+    # Se não conseguiu parsear, retorna como está
+    return data_str
+
 # Auth
 @api_router.post("/auth/login")
 async def login(request: LoginRequest):
