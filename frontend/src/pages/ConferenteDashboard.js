@@ -6,6 +6,17 @@ import ConferenciaScreen from '../components/ConferenciaScreen';
 import ModalIniciarConferencia from '../components/ModalIniciarConferencia';
 import ModalSelecionarRecipiente from '../components/ModalSelecionarRecipiente';
 
+/**
+ * Normaliza a resposta da API para sempre retornar um array de cargas
+ * Aceita diferentes formatos: array direto, objeto com propriedade "cargas", ou null/undefined
+ */
+function toArrayCargas(data) {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.cargas)) return data.cargas;
+  return [];
+}
+
 export default function ConferenteDashboard({ usuario, onLogout }) {
   const [dataSelecionada, setDataSelecionada] = useState('');
   const [tipoSelecionado, setTipoSelecionado] = useState('caixaria');
