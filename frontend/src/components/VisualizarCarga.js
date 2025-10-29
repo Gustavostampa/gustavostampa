@@ -8,6 +8,7 @@ export default function VisualizarCarga({ carga, onVoltar }) {
   const [cargaAtual, setCargaAtual] = useState(carga);
   const [itemParaExcluir, setItemParaExcluir] = useState(null);
   const [showModalConfirmacao, setShowModalConfirmacao] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
 
   const handleExcluirItem = (item, index) => {
     setItemParaExcluir({ item, index });
@@ -15,23 +16,76 @@ export default function VisualizarCarga({ carga, onVoltar }) {
   };
 
   const confirmarExclusao = async () => {
-    if (!itemParaExcluir) return;
+    if (!itemParaExcluir || excluindo) return;
 
+    setExcluindo(true);
+    
     try {
+      console.log('[Frontend] Excluindo item:', {
+        carga_id: cargaAtual.id,
+        item_index: itemParaExcluir.index,
+        url: `${API}/cargas/${cargaAtual.id}/itens/${itemParaExcluir.index}`
+      });
+      
       const response = await axios.delete(
         `${API}/cargas/${cargaAtual.id}/itens/${itemParaExcluir.index}`
       );
+      
+      console.log('[Frontend] Resposta da exclusão:', response.data);
 
-      // Remover item localmente
+      // Remover item localmente (optimistic update)
       const novosItens = cargaAtual.itens.filter((_, idx) => idx !== itemParaExcluir.index);
-      setCargaAtual({ ...cargaAtual, itens: novosItens });
+      setCargaAtual({ 
+        ...cargaAtual, 
+        itens: novosItens,
+        total_itens: novosItens.length 
+      });
 
-      toast.success('Item excluído com sucesso');
+      toast.success(response.data?.message || 'Item excluído com sucesso');
       setShowModalConfirmacao(false);
       setItemParaExcluir(null);
+      
     } catch (error) {
-      console.error('Erro ao excluir item:', error);
-      toast.error(error.response?.data?.detail || 'Erro ao excluir item');
+      console.error('[Frontend] Erro ao excluir item:', error);
+      
+      // Tratamento específico por código de erro
+      const status = error.response?.status;
+      const detail = error.response?.data?.detail;
+      
+      if (status === 404) {
+        // Item não existe mais - remover da UI mesmo assim
+        console.warn('[Frontend] Item não encontrado no backend, removendo da UI');
+        const novosItens = cargaAtual.itens.filter((_, idx) => idx !== itemParaExcluir.index);
+        setCargaAtual({ 
+          ...cargaAtual, 
+          itens: novosItens,
+          total_itens: novosItens.length 
+        });
+        toast.info('Item já havia sido excluído anteriormente');
+        setShowModalConfirmacao(false);
+        setItemParaExcluir(null);
+        
+      } else if (status === 400) {
+        // Carga finalizada ou status inválido
+        toast.error(detail || 'Não é possível excluir este item');
+        setShowModalConfirmacao(false);
+        
+      } else if (status === 403) {
+        // Sem permissão
+        toast.error('Você não tem permissão para excluir itens');
+        setShowModalConfirmacao(false);
+        
+      } else if (status === 500) {
+        // Erro interno
+        toast.error('Erro no servidor. Tente novamente.');
+        
+      } else {
+        // Erro desconhecido
+        toast.error(detail || 'Falha ao excluir item. Tente novamente.');
+      }
+      
+    } finally {
+      setExcluindo(false);
     }
   };
 
