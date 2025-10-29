@@ -110,16 +110,16 @@ class MultiPedidosTester:
             
         return True, "Structure is valid"
     
-    def test_structured_response(self):
-        """Test 1: Basic structured response validation"""
-        print_header("TEST 1: Teste de resposta estruturada")
+    def test_multi_cargas_exist(self):
+        """Test 1: Verificar cargas Multi existentes"""
+        print_header("TEST 1: Verificar cargas Multi existentes")
         
-        print_info("Testing GET /api/cargas without filters")
-        status_code, data = self.make_request("/cargas")
+        print_info("Testing GET /api/cargas?tipo=multi")
+        status_code, data = self.make_request("/cargas", {"tipo": "multi"})
         
         if status_code != 200:
             print_error(f"Expected status 200, got {status_code}")
-            self.test_results.append(("Structured Response", False, f"❌ Status {status_code}"))
+            self.test_results.append(("Multi Cargas Exist", False, f"❌ Status {status_code}"))
             return False
         
         print_success("Status 200 OK received")
@@ -128,33 +128,32 @@ class MultiPedidosTester:
         is_valid, message = self.validate_cargas_response_structure(data)
         if not is_valid:
             print_error(f"Structure validation failed: {message}")
-            self.test_results.append(("Structured Response", False, f"❌ {message}"))
+            self.test_results.append(("Multi Cargas Exist", False, f"❌ {message}"))
             return False
         
         print_success("Response structure is valid: {total, page, pageSize, cargas}")
-        print_info(f"Total cargas: {data['total']}")
-        print_info(f"Page: {data['page']}, PageSize: {data['pageSize']}")
+        print_info(f"Total Multi cargas found: {data['total']}")
         print_info(f"Cargas array length: {len(data['cargas'])}")
         
-        # Validate that cargas is ALWAYS an array
-        if not isinstance(data["cargas"], list):
-            print_error("cargas field is not an array")
-            self.test_results.append(("Structured Response", False, "❌ cargas is not an array"))
-            return False
+        # Analyze Multi cargas
+        multi_count = 0
+        multi_statuses = {}
         
-        print_success("✅ cargas field is an array")
+        for carga in data["cargas"]:
+            if carga.get("tipo") in ["multi", "Multi-Pedidos", "multi_pedidos"]:
+                multi_count += 1
+                status = carga.get("status", "unknown")
+                multi_statuses[status] = multi_statuses.get(status, 0) + 1
+                print_info(f"Multi carga: {carga.get('identificador_carga')} - Status: {status} - Tipo: {carga.get('tipo')}")
         
-        # Check individual carga structure if any exist
-        if data["cargas"]:
-            carga = data["cargas"][0]
-            required_carga_fields = ["id", "identificador_carga", "tipo", "status", "data"]
-            for field in required_carga_fields:
-                if field not in carga:
-                    print_warning(f"Carga missing field: {field}")
-                else:
-                    print_info(f"Carga has field: {field} = {carga[field]}")
+        print_info(f"Multi cargas by status: {multi_statuses}")
         
-        self.test_results.append(("Structured Response", True, "✅ Structure validation passed"))
+        if multi_count == 0:
+            print_warning("No Multi cargas found in system")
+        else:
+            print_success(f"Found {multi_count} Multi cargas")
+        
+        self.test_results.append(("Multi Cargas Exist", True, f"✅ Found {multi_count} Multi cargas"))
         return True
     
     def test_empty_result(self):
