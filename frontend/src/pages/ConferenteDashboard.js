@@ -262,6 +262,18 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
                   <input
                     type="radio"
                     name="tipo"
+                    value=""
+                    checked={tipoSelecionado === ''}
+                    onChange={(e) => setTipoSelecionado(e.target.value)}
+                    data-testid="radio-todos"
+                    className="w-5 h-5"
+                  />
+                  <span className="font-semibold">Todos</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="tipo"
                     value="caixaria"
                     checked={tipoSelecionado === 'caixaria'}
                     onChange={(e) => setTipoSelecionado(e.target.value)}
