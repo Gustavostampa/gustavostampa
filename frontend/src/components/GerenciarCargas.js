@@ -29,10 +29,10 @@ export default function GerenciarCargas({ onVoltar }) {
       if (filtros.status) params.status = filtros.status;
 
       console.log('[Frontend] === INICIANDO CHAMADA API ===');
-      console.log('[Frontend] URL:', `${API}/api/cargas`);
+      console.log('[Frontend] URL:', `${API}/cargas`);
       console.log('[Frontend] Params:', params);
       
-      const response = await axios.get(`${API}/api/cargas`, { 
+      const response = await axios.get(`${API}/cargas`, { 
         params,
         timeout: 10000
       });
