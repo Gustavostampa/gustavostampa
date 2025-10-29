@@ -494,14 +494,15 @@ class MultiPedidosTester:
         print(f"\n{Colors.BOLD}OVERALL RESULT:{Colors.ENDC}")
         if passed == total:
             print_success(f"ALL TESTS PASSED ({passed}/{total})")
-            print_success("✅ GET /api/cargas endpoint returns consistent format")
-            print_success("✅ ALWAYS returns {total, page, pageSize, cargas} structure")
-            print_success("✅ NEVER returns 404 for empty results (returns 200 with empty array)")
-            print_success("✅ cargas field is ALWAYS an array (never null or string)")
-            print_success("✅ Frontend can safely use cargas.filter() without errors")
+            print_success("✅ Multi-pedidos cargas are visible to conferente")
+            print_success("✅ No type filter shows BOTH caixaria AND multi types")
+            print_success("✅ Explicit multi filter works correctly")
+            print_success("✅ Caixaria filter works correctly")
+            print_success("✅ Conferente status visibility is correct")
+            print_success("✅ Tipo field naming is consistent")
         else:
             print_error(f"SOME TESTS FAILED ({passed}/{total})")
-            print_error("❌ Issues found with the cargas endpoint format consistency")
+            print_error("❌ Issues found with Multi-pedidos listing functionality")
 
 def main():
     """Main function"""
