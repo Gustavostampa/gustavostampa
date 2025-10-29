@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ArrowLeft, Eye, Search } from 'lucide-react';
+import { ArrowLeft, Eye, Search, RefreshCw } from 'lucide-react';
 import VisualizarCarga from './VisualizarCarga';
 import { API } from '../App';
 
