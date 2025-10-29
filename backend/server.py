@@ -637,8 +637,18 @@ async def importar_multi(file: UploadFile = File(...), acao: str = Form("substit
     }
 
 # Cargas
-@api_router.get("/cargas", response_model=List[Carga])
-async def listar_cargas(data: Optional[str] = None, tipo: Optional[str] = None, status: Optional[str] = None):
+@api_router.get("/cargas")
+async def listar_cargas(
+    data: Optional[str] = None, 
+    tipo: Optional[str] = None, 
+    status: Optional[str] = None,
+    limit: int = 1000,
+    skip: int = 0
+):
+    """
+    Lista todas as cargas com filtros opcionais.
+    Retorna dados completos incluindo contagem de itens.
+    """
     filtro = {}
     if data:
         filtro["data"] = data
@@ -647,8 +657,23 @@ async def listar_cargas(data: Optional[str] = None, tipo: Optional[str] = None, 
     if status:
         filtro["status"] = status
     
-    cargas = await db.cargas.find(filtro, {"_id": 0}).to_list(1000)
-    return cargas
+    # Buscar cargas com ordenação por data decrescente
+    cargas = await db.cargas.find(filtro, {"_id": 0}).sort("data", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Contar total
+    total = await db.cargas.count_documents(filtro)
+    
+    # Adicionar informações extras para cada carga
+    for carga in cargas:
+        carga["total_itens"] = len(carga.get("itens", []))
+    
+    return {
+        "total": total,
+        "cargas": cargas,
+        "limit": limit,
+        "skip": skip
+    }
+
 
 @api_router.get("/cargas/ultima-atualizacao")
 async def obter_ultima_atualizacao():
