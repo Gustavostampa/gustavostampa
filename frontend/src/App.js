@@ -8,7 +8,7 @@ import { Toaster } from 'sonner';
 import '@/App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-export const API = BACKEND_URL;
+export const API = `${BACKEND_URL}/api`;
 
 axios.interceptors.request.use(config => {
   const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
