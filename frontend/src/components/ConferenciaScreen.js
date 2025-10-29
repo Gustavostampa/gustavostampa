@@ -261,9 +261,17 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
   const progresso = totalItens > 0 ? (itensOk / totalItens * 100) : 0;
   
   // Filtrar itens se necessário
-  const itensExibidos = filtrarDiferencas 
-    ? cargaAtual.itens.filter(item => item.quantidade !== item.quantidade_conferida)
-    : cargaAtual.itens;
+  let itensExibidos = cargaAtual.itens;
+  
+  // Para Multi-pedidos: filtrar apenas itens do recipiente ativo
+  if (cargaAtual.tipo === 'multi' && sessaoAtual.recipiente) {
+    itensExibidos = itensExibidos.filter(item => item.recipiente === sessaoAtual.recipiente);
+  }
+  
+  // Aplicar filtro de diferenças se ativo
+  if (filtrarDiferencas) {
+    itensExibidos = itensExibidos.filter(item => item.quantidade !== item.quantidade_conferida);
+  }
   
   // Habilitar finalizar apenas se houver sessão ativa e pelo menos 1 conferido
   const podeFinalizar = (sessaoAtual.status === 'ativa' || sessaoAtual.status === 'pausada') && totalConferido > 0;
