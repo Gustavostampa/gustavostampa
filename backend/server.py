@@ -632,6 +632,82 @@ async def obter_carga(carga_id: str):
         raise HTTPException(status_code=404, detail="Carga não encontrada")
     return carga
 
+@api_router.get("/cargas/{carga_id}/itens")
+async def obter_itens_carga(carga_id: str, recipiente_id: Optional[str] = None):
+    """
+    Retorna itens de uma carga, opcionalmente filtrados por recipiente.
+    Para Multi-pedidos: GET /api/cargas/{id}/itens?recipiente_id=R01
+    """
+    carga = await db.cargas.find_one({"id": carga_id}, {"_id": 0})
+    if not carga:
+        raise HTTPException(status_code=404, detail="Carga não encontrada")
+    
+    itens = carga["itens"]
+    
+    # Filtrar por recipiente se fornecido
+    if recipiente_id:
+        itens = [item for item in itens if item.get("recipiente") == recipiente_id]
+    
+    return {
+        "carga_id": carga_id,
+        "tipo": carga["tipo"],
+        "recipiente_filtrado": recipiente_id,
+        "total_itens": len(itens),
+        "itens": itens
+    }
+
+@api_router.get("/cargas/{carga_id}/recipientes")
+async def listar_recipientes_carga(carga_id: str):
+    """
+    Lista todos os recipientes únicos de uma carga Multi-pedidos.
+    Retorna também o progresso de cada recipiente.
+    """
+    carga = await db.cargas.find_one({"id": carga_id}, {"_id": 0})
+    if not carga:
+        raise HTTPException(status_code=404, detail="Carga não encontrada")
+    
+    if carga["tipo"] != "multi":
+        return {"recipientes": []}
+    
+    # Extrair recipientes únicos
+    recipientes_set = set()
+    recipientes_info = {}
+    
+    for item in carga["itens"]:
+        rec = item.get("recipiente")
+        if rec:
+            recipientes_set.add(rec)
+            if rec not in recipientes_info:
+                recipientes_info[rec] = {
+                    "recipiente": rec,
+                    "total_itens": 0,
+                    "itens_conferidos": 0,
+                    "itens_ok": 0,
+                    "itens_diferenca": 0,
+                    "progresso": 0
+                }
+            
+            recipientes_info[rec]["total_itens"] += 1
+            if item["status"] != "pendente":
+                recipientes_info[rec]["itens_conferidos"] += 1
+            if item["status"] == "ok":
+                recipientes_info[rec]["itens_ok"] += 1
+            elif item["status"] == "diferenca":
+                recipientes_info[rec]["itens_diferenca"] += 1
+    
+    # Calcular progresso
+    for rec_info in recipientes_info.values():
+        if rec_info["total_itens"] > 0:
+            rec_info["progresso"] = round((rec_info["itens_ok"] / rec_info["total_itens"]) * 100)
+    
+    recipientes_list = sorted(recipientes_info.values(), key=lambda x: x["recipiente"])
+    
+    return {
+        "carga_id": carga_id,
+        "total_recipientes": len(recipientes_list),
+        "recipientes": recipientes_list
+    }
+
 class ItemUpdate(BaseModel):
     quantidade_conferida: int
     status: str
