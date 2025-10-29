@@ -27,6 +27,7 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
       inputRef.current.focus();
     }
     carregarSobras();
+    carregarRecipientes();
   }, []);
 
   const recarregarCarga = async () => {
