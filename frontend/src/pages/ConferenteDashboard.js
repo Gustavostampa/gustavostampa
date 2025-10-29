@@ -83,13 +83,25 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
   const carregarCargas = async (silent = false) => {
     if (!silent) setAtualizando(true);
     try {
+      console.log('[ConferenteDashboard] Carregando cargas:', { data: dataSelecionada, tipo: tipoSelecionado });
+      
       const response = await axios.get(`${API}/cargas`, {
         params: { data: dataSelecionada, tipo: tipoSelecionado }
       });
-      setCargas(response.data);
+      
+      console.log('[ConferenteDashboard] Resposta da API:', response.data);
+      
+      // Normalizar resposta para array
+      const cargasArray = toArrayCargas(response.data);
+      
+      console.log('[ConferenteDashboard] Cargas normalizadas:', cargasArray.length, 'cargas');
+      
+      setCargas(cargasArray);
       setUltimaAtualizacao(new Date());
     } catch (error) {
-      console.error('Erro ao carregar cargas:', error);
+      console.error('[ConferenteDashboard] Erro ao carregar cargas:', error);
+      // Em caso de erro, garantir que cargas seja um array vazio
+      setCargas([]);
     } finally {
       if (!silent) setAtualizando(false);
     }
