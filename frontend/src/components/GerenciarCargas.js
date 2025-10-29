@@ -27,13 +27,23 @@ export default function GerenciarCargas({ onVoltar }) {
       if (filtros.data) params.dataInicio = filtros.data;
       if (filtros.tipo) params.tipo = filtros.tipo;
       if (filtros.status) params.status = filtros.status;
+      
+      // Adicionar timestamp para evitar cache
+      params._t = Date.now();
 
       console.log('[Frontend] Carregando cargas...');
       console.log('[Frontend] Filtros:', filtros);
       console.log('[Frontend] Params enviados:', params);
-      console.log('[Frontend] URL:', `${API}/api/cargas`);
+      console.log('[Frontend] URL completa:', `${API}/api/cargas`);
       
-      const response = await axios.get(`${API}/api/cargas`, { params });
+      const response = await axios.get(`${API}/api/cargas`, { 
+        params,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
       console.log('[Frontend] Resposta recebida:', response.data);
       console.log('[Frontend] Status:', response.status);
       
@@ -56,9 +66,10 @@ export default function GerenciarCargas({ onVoltar }) {
     } catch (error) {
       console.error('[Frontend] Erro ao carregar cargas:', error);
       console.error('[Frontend] Error message:', error.message);
-      console.error('[Frontend] Response:', error.response);
-      console.error('[Frontend] Detalhes:', error.response?.data);
-      setError(`Falha ao carregar as cargas. ${error.message || 'Tente novamente.'}`);
+      console.error('[Frontend] Response status:', error.response?.status);
+      console.error('[Frontend] Response data:', error.response?.data);
+      console.error('[Frontend] Request URL:', error.config?.url);
+      setError(`Falha ao carregar as cargas. ${error.response?.status === 404 ? 'Endpoint não encontrado (404)' : error.message}`);
       setCargas([]);
       setTotal(0);
     } finally {
