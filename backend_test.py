@@ -445,10 +445,10 @@ class MultiPedidosTester:
     
     def run_all_tests(self):
         """Run all tests"""
-        print_header("WMS SCANNER - GET /api/cargas ENDPOINT TESTING")
+        print_header("WMS SCANNER - MULTI-PEDIDOS LISTING FUNCTIONALITY TESTING")
         print_info(f"Backend URL: {BACKEND_URL}")
-        print_info("Testing cargas listing endpoint for consistent format validation")
-        print_info("Validating that API always returns {total, page, pageSize, cargas} structure")
+        print_info("Testing Multi-pedidos cargas visibility for conferente role")
+        print_info("Validating that Multi-pedidos loads appear when no type filter is applied")
         
         # Authenticate
         if not self.authenticate():
