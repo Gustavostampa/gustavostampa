@@ -155,6 +155,72 @@ backend:
           
           **Backend API Status: FULLY FUNCTIONAL**
 
+  - task: "Test DELETE /api/cargas/:id/itens/:itemId endpoint functionality"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ COMPREHENSIVE DELETE ENDPOINT TESTING COMPLETED - ALL TESTS PASSED (6/6)
+          
+          **Test Request:** Testar funcionalidade de exclusão de itens de carga (DELETE /api/cargas/:id/itens/:itemId)
+          
+          **Tests Executed:**
+          
+          1. ✅ **Setup - Obter carga editável**
+             - Found editable carga: TEST20 (ID: 9f4e6165-30bb-4c47-92f3-d24517538dff)
+             - Status: pausada, Total items: 5
+             - Found finalized carga for restriction testing
+          
+          2. ✅ **Teste de exclusão bem-sucedida**
+             - DELETE /api/cargas/{carga_id}/itens/0 (primeiro item)
+             - Status: 200 OK ✅
+             - Response structure: {ok: true, message, item_removido, total_itens_antes, total_itens_depois} ✅
+             - Item removed: "6 - Chocolate 6" ✅
+             - Total calculation: 5 → 4 items ✅
+             - Carga updated correctly in database ✅
+          
+          3. ✅ **Teste com carga finalizada**
+             - DELETE on finalized carga
+             - Status: 400 Bad Request ✅
+             - Error message: "Não é possível excluir itens de uma carga finalizada" ✅
+          
+          4. ✅ **Teste com item inexistente**
+             - DELETE /api/cargas/{carga_id}/itens/9999
+             - Status: 404 Not Found ✅
+             - Error message: "Item não encontrado na carga" ✅
+          
+          5. ✅ **Teste com carga inexistente**
+             - DELETE /api/cargas/carga-inexistente/itens/0
+             - Status: 404 Not Found ✅
+             - Error message: "Carga não encontrada" ✅
+          
+          6. ✅ **Validação de integridade**
+             - Array integrity: 4 items, total_itens: 4 ✅
+             - Data consistency maintained ✅
+             - updated_at field handling verified ✅
+          
+          7. ✅ **Verificar logs DEBUG**
+             - Backend logs showing proper DEBUG/INFO/WARNING/ERROR messages ✅
+             - Log patterns verified in supervisor logs ✅
+          
+          **Key Validations:**
+          ✅ Endpoint returns correct HTTP codes (200, 400, 404)
+          ✅ Response structure matches specification
+          ✅ total_itens updated correctly
+          ✅ Array of items modified correctly
+          ✅ Error messages are clear and useful
+          ✅ Data integrity maintained after deletion
+          ✅ Proper validation for finalized cargas
+          ✅ Logs generated at appropriate levels
+          
+          **Backend DELETE API Status: FULLY FUNCTIONAL**
+
 frontend:
   - task: "Fix duplicated /api/ prefix in URLs"
     implemented: true
