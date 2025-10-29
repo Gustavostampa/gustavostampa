@@ -263,64 +263,61 @@ agent_communication:
   
   - agent: "main"
     message: |
-      ===== TAREFA 2: MÚLTIPLOS EANs POR PRODUTO =====
-      ✅ COMPLETO
+      ===== TAREFA 2: MÚLTIPLOS EANs POR PRODUTO (CORRIGIDO) =====
+      ✅ COMPLETO - VERSÃO CORRETA
+      
+      **Comportamento Correto:**
+      - Mesmo código (SKU) pode ter múltiplos EANs (UN, CX, EXB)
+      - Cada EAN é um item SEPARADO na carga
+      - NÃO multiplica quantidades - cada scan = +1
+      
+      **Exemplo:**
+      Carga tem:
+      - 10x ARROZ001-UN (EAN: 789123456)
+      - 2x ARROZ001-CX (EAN: 178912345)
+      
+      Ao escanear:
+      - EAN 789123456 → soma 1 em ARROZ001-UN
+      - EAN 178912345 → soma 1 em ARROZ001-CX
       
       Backend Implementado:
       
-      1. Novo Modelo ProdutoEAN (linhas 58-66)
-         - Campos: id, sku, ean (normalizado), tipo_unidade, fator_conversao
-         - Suporta: UNI, CX, EXB, FRD, etc
-         - fator_conversao: quantas unidades cada EAN representa
-         - Índice único: (sku, ean) será garantido pela aplicação
+      1. Modelo ProdutoEAN CORRIGIDO (sem fator_conversao)
+         - Campos: id, sku, ean (normalizado), tipo_unidade, descricao
+         - Remove fator_conversao (não multiplica)
+         - tipo_unidade apenas informativo (UN, CX, EXB)
       
       2. Função normalizar_ean() (linhas 141-162)
          - Remove espaços, hífens, caracteres não numéricos
          - Aceita GTIN-8, GTIN-12, GTIN-13, GTIN-14
-         - Converte para formato padrão de 14 dígitos (padding com zeros)
-         - Evita problemas com leading zeros e DUN-14
+         - Padroniza para 14 dígitos
       
-      3. CRUD Endpoints para produto_eans (linhas 323-393)
-         - GET /api/produto-eans (listar com filtros sku/ean)
+      3. CRUD Endpoints produto_eans (linhas 323-393)
+         - GET /api/produto-eans (listar)
          - GET /api/produto-eans/buscar-por-ean/{ean}
-         - POST /api/produto-eans/criar (valida duplicidade)
+         - POST /api/produto-eans/criar
          - PUT /api/produto-eans/{id}
          - DELETE /api/produto-eans/{id}
       
-      4. Lógica de Leitura Atualizada (linhas 827-933)
+      4. Lógica de Leitura CORRIGIDA (linhas 827-930)
          - PASSO 1: Normaliza EAN escaneado
-         - PASSO 2: Busca em produto_eans (prioridade)
-         - PASSO 3: Aplica fator_conversao (ex: CX=12 → soma 12 unidades)
-         - PASSO 4: Fallback para sistema antigo (produtos.ean)
-         - PASSO 5: Se não achar, marca como "Sobra"
-         - PASSO 6: Valida se SKU está na carga/recipiente
-         - PASSO 7: Atualiza quantidade com conversão aplicada
+         - PASSO 2: Busca em produto_eans → mapeia EAN → SKU
+         - PASSO 3: Busca item na carga por (SKU + EAN) - match exato!
+         - PASSO 4: Soma quantidade SEM multiplicação
+         - PASSO 5: Fallback para sistema antigo
+         - PASSO 6: Se não achar (SKU+EAN), marca como "Sobra"
       
-      5. Endpoint de Migração (linhas 1037-1081)
+      5. Endpoint de Migração (linhas 1037-1074)
          - POST /api/admin/migrar-eans
-         - Lê todos os produtos existentes
-         - Cria registro em produto_eans para cada EAN
-         - Normaliza EANs automaticamente
-         - fator_conversao padrão = 1
-         - Retorna relatório: migrados, erros
+         - Cria produto_eans para cada produto existente
+         - SEM fator_conversao
       
-      Comportamento Garantido:
-      ✅ Mesmo SKU com EANs diferentes → soma corretamente com conversão
-      ✅ EAN de embalagem (CX, FRD) → converte para unidades
-      ✅ EAN inexistente → marca como Sobra
-      ✅ EAN de SKU diferente da carga → marca como Sobra
-      ✅ Normalização evita erros de formato
-      ✅ Fallback para sistema antigo garante compatibilidade
+      **Diferença da Implementação Errada:**
+      ❌ ANTES: Multiplicava (CX=12 → somava 12 unidades)
+      ✅ AGORA: Não multiplica (CX=1 → soma 1 caixa)
       
-      Frontend:
-      - Não implementado UI de gerenciamento (pode ser feito depois)
-      - Gestores podem usar endpoints API diretamente ou via ferramenta REST
-      - Ou adicionar tela de gerenciamento após validação
-      
-      Migração de Dados:
-      - Rodar endpoint POST /api/admin/migrar-eans após deploy
-      - Migra automaticamente todos os produtos existentes
-      - Produtos antigos continuam funcionando (fallback)
+      ❌ ANTES: Match só por SKU
+      ✅ AGORA: Match por (SKU + EAN)
       
       ===== PRÓXIMA TAREFA =====
       - Tarefa 3: Multi-pedidos melhorado (filtro recipiente)
