@@ -23,7 +23,7 @@ export default function GestorDashboard({ usuario, onLogout }) {
   const [sessoesFinalizadas, setSessoesFinalizadas] = useState([]);
 
   useEffect(() => {
-    if (!showProdutos && !showVisualizarCarga) {
+    if (!showProdutos && !showVisualizarCarga && !showGerenciarCargas) {
       if (abaAtiva === 'tempo-real') {
         carregarStats();
       } else {
@@ -31,7 +31,7 @@ export default function GestorDashboard({ usuario, onLogout }) {
       }
       carregarUsuarios();
     }
-  }, [filtros, showProdutos, showVisualizarCarga, abaAtiva]);
+  }, [filtros, showProdutos, showVisualizarCarga, showGerenciarCargas, abaAtiva]);
 
   const handleVisualizarCarga = async (cargaId) => {
     try {
