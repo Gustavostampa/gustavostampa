@@ -203,8 +203,8 @@ class CargasEndpointTester:
         """Test 3: Filters that conferente would use"""
         print_header("TEST 3: Teste com filtros (conferente usaria)")
         
-        print_info("Testing GET /api/cargas?data=2025-10-29&tipo=caixaria")
-        status_code, data = self.make_request("/cargas", {"data": "2025-10-29", "tipo": "caixaria"})
+        print_info("Testing GET /api/cargas?dataInicio=2025-10-29&dataFim=2025-10-29&tipo=caixaria")
+        status_code, data = self.make_request("/cargas", {"dataInicio": "2025-10-29", "dataFim": "2025-10-29", "tipo": "caixaria"})
         
         if status_code != 200:
             print_error(f"Expected status 200, got {status_code}")
