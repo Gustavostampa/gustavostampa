@@ -5,13 +5,15 @@ import ImportModal from '../components/ImportModal';
 import UsuariosModal from '../components/UsuariosModal';
 import ProdutosScreen from './ProdutosScreen';
 import VisualizarCarga from '../components/VisualizarCarga';
-import { LogOut, Upload, Users, BarChart3, Trash2, RefreshCw, Package, Eye } from 'lucide-react';
+import GerenciarCargas from '../components/GerenciarCargas';
+import { LogOut, Upload, Users, BarChart3, Trash2, RefreshCw, Package, Eye, ClipboardList } from 'lucide-react';
 
 export default function GestorDashboard({ usuario, onLogout }) {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showUsuariosModal, setShowUsuariosModal] = useState(false);
   const [showProdutos, setShowProdutos] = useState(false);
   const [showVisualizarCarga, setShowVisualizarCarga] = useState(false);
+  const [showGerenciarCargas, setShowGerenciarCargas] = useState(false);
   const [cargaSelecionada, setCargaSelecionada] = useState(null);
   const [importType, setImportType] = useState(null);
   const [stats, setStats] = useState([]);
