@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for WMS Scanner - DELETE /api/cargas/:id/itens/:itemId endpoint
-Testing the item deletion functionality with validations, logs and error handling.
+Backend API Testing for WMS Scanner - GET /api/cargas endpoint
+Testing the cargas listing endpoint to validate consistent format with array of cargas.
+Validates that the API always returns {total, page, pageSize, cargas} structure.
 """
 
 import requests
