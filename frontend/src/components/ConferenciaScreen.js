@@ -47,6 +47,61 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
     }
   };
 
+  const carregarRecipientes = async () => {
+    if (cargaAtual.tipo !== 'multi') return;
+    
+    try {
+      const response = await axios.get(`${API}/cargas/${cargaAtual.id}/recipientes`);
+      setRecipientesDisponiveis(response.data.recipientes || []);
+    } catch (error) {
+      console.error('Erro ao carregar recipientes:', error);
+    }
+  };
+
+  const handleFinalizarRecipiente = async () => {
+    if (!sessaoAtual.recipiente) {
+      alert('Nenhum recipiente ativo');
+      return;
+    }
+
+    if (!window.confirm(`Finalizar recipiente "${sessaoAtual.recipiente}"?`)) {
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/sessoes/${sessaoAtual.id}/finalizar-recipiente`);
+      
+      // Atualizar sessão
+      setSessaoAtual({...sessaoAtual, recipiente: null});
+      
+      // Recarregar lista de recipientes
+      await carregarRecipientes();
+      
+      // Mostrar modal para selecionar próximo
+      setShowModalTrocarRecipiente(true);
+    } catch (error) {
+      alert(error.response?.data?.detail || 'Erro ao finalizar recipiente');
+    }
+  };
+
+  const handleTrocarRecipiente = async (novoRecipiente) => {
+    try {
+      await axios.post(`${API}/sessoes/${sessaoAtual.id}/trocar-recipiente?novo_recipiente=${novoRecipiente}`);
+      
+      // Atualizar sessão e carga
+      setSessaoAtual({...sessaoAtual, recipiente: novoRecipiente});
+      await recarregarCarga();
+      
+      setShowModalTrocarRecipiente(false);
+      
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    } catch (error) {
+      alert(error.response?.data?.detail || 'Erro ao trocar recipiente');
+    }
+  };
+
   const handleKeyDown = async (e) => {
     if (e.key === 'Enter' || e.key === 'Tab') {
       e.preventDefault();
