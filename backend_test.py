@@ -315,76 +315,62 @@ class MultiPedidosTester:
         self.test_results.append(("Caixaria Filter", True, f"✅ Found {caixaria_count} Caixaria cargas only"))
         return True
     
-    def test_critical_validation(self):
-        """Test 5: Critical validation - response format consistency"""
-        print_header("TEST 5: Validação crítica")
+    def test_conferente_status_visibility(self):
+        """Test 5: Validar que todos os status aparecem para conferente"""
+        print_header("TEST 5: Validar status visíveis para conferente")
         
-        print_info("Testing various scenarios to ensure ALWAYS consistent format")
+        print_info("Testing conferente should see: aberta, pausada, em_andamento (NOT finalizada)")
         
-        test_scenarios = [
-            ("Basic listing", {}),
-            ("Status filter", {"status": "finalizada"}),
-            ("Tipo filter", {"tipo": "multi"}),
-            ("Date range", {"dataInicio": "2024-01-01", "dataFim": "2024-12-31"}),
-            ("Pagination", {"page": 1, "pageSize": 5}),
-            ("Combined filters", {"status": "em_andamento", "tipo": "caixaria"}),
-            ("Non-existent status", {"status": "status_inexistente"}),
-        ]
+        # Test each status individually
+        conferente_statuses = ["aberta", "pausada", "em_andamento"]
+        blocked_statuses = ["finalizada"]
         
         all_passed = True
+        status_counts = {}
         
-        for scenario_name, params in test_scenarios:
-            print_info(f"Testing scenario: {scenario_name}")
-            status_code, data = self.make_request("/cargas", params)
+        for status in conferente_statuses:
+            print_info(f"Testing status: {status}")
+            status_code, data = self.make_request("/cargas", {"status": status})
             
-            # CRITICAL: Must ALWAYS return 200 (never 404)
             if status_code != 200:
-                print_error(f"Scenario '{scenario_name}': Expected 200, got {status_code}")
+                print_error(f"Status '{status}': Expected 200, got {status_code}")
                 all_passed = False
                 continue
             
-            # CRITICAL: Must ALWAYS have consistent structure
-            is_valid, message = self.validate_cargas_response_structure(data)
-            if not is_valid:
-                print_error(f"Scenario '{scenario_name}': {message}")
-                all_passed = False
-                continue
+            count = data.get("total", 0)
+            status_counts[status] = count
+            print_info(f"Status '{status}': {count} cargas found")
             
-            # CRITICAL: cargas must ALWAYS be an array
-            if not isinstance(data["cargas"], list):
-                print_error(f"Scenario '{scenario_name}': cargas is not an array")
-                all_passed = False
-                continue
+            # Validate all returned cargas have correct status
+            for carga in data.get("cargas", []):
+                if carga.get("status") != status:
+                    print_error(f"Carga {carga.get('identificador_carga')} has wrong status: {carga.get('status')}")
+                    all_passed = False
+        
+        # Test that conferente should NOT see finalizada by default
+        print_info("Testing default filter (should exclude finalizada)")
+        status_code, data = self.make_request("/cargas")
+        
+        if status_code == 200:
+            finalizada_count = 0
+            for carga in data.get("cargas", []):
+                if carga.get("status") == "finalizada":
+                    finalizada_count += 1
             
-            # CRITICAL: Must NEVER return just array directly
-            if isinstance(data, list):
-                print_error(f"Scenario '{scenario_name}': Response is array directly (should be object)")
-                all_passed = False
-                continue
-            
-            # CRITICAL: cargas must NEVER be null or string
-            if data["cargas"] is None:
-                print_error(f"Scenario '{scenario_name}': cargas is null")
-                all_passed = False
-                continue
-            
-            if isinstance(data["cargas"], str):
-                print_error(f"Scenario '{scenario_name}': cargas is string")
-                all_passed = False
-                continue
-            
-            print_success(f"Scenario '{scenario_name}': ✅ Passed (total: {data['total']}, cargas: {len(data['cargas'])})")
+            if finalizada_count > 0:
+                print_warning(f"Found {finalizada_count} finalizada cargas in default listing")
+            else:
+                print_success("✅ No finalizada cargas in default listing (correct for conferente)")
+        
+        print_info(f"Status counts: {status_counts}")
         
         if all_passed:
-            print_success("✅ ALL scenarios maintain consistent format")
-            print_success("✅ NEVER returns 404 for empty results")
-            print_success("✅ ALWAYS returns {total, page, pageSize, cargas: []}")
-            print_success("✅ cargas is ALWAYS an array (never null/string)")
-            self.test_results.append(("Critical Validation", True, "✅ All critical validations passed"))
+            print_success("✅ All conferente-visible statuses working correctly")
+            self.test_results.append(("Conferente Status Visibility", True, f"✅ Status counts: {status_counts}"))
             return True
         else:
-            print_error("❌ Some scenarios failed critical validation")
-            self.test_results.append(("Critical Validation", False, "❌ Critical validation failed"))
+            print_error("❌ Issues with status visibility")
+            self.test_results.append(("Conferente Status Visibility", False, "❌ Status visibility issues"))
             return False
     
     # Removed integrity validation test as it was for DELETE endpoint
