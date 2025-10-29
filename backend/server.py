@@ -768,6 +768,59 @@ async def atualizar_item_carga(carga_id: str, item_index: int, update: ItemUpdat
     
     return {"message": "Item atualizado com sucesso"}
 
+@api_router.delete("/cargas/{carga_id}/itens/{item_id}")
+async def excluir_item_carga(carga_id: str, item_id: str):
+    """
+    Exclui um item específico de uma carga.
+    Apenas permitido para cargas com status 'pendente', 'em_andamento' ou 'pausada'.
+    Cargas finalizadas não podem ser alteradas.
+    """
+    # Buscar carga
+    carga = await db.cargas.find_one({"id": carga_id}, {"_id": 0})
+    if not carga:
+        raise HTTPException(status_code=404, detail="Carga não encontrada")
+    
+    # Bloquear se carga finalizada
+    if carga["status"] == "finalizada":
+        raise HTTPException(
+            status_code=400, 
+            detail="Não é possível excluir itens de uma carga finalizada"
+        )
+    
+    # Procurar item pelo ID (assumindo que item_id é o índice ou código_produto)
+    item_index = None
+    for idx, item in enumerate(carga["itens"]):
+        # Comparar por índice convertido para string ou por código_produto
+        if str(idx) == item_id or item.get("codigo_produto") == item_id:
+            item_index = idx
+            break
+    
+    if item_index is None:
+        raise HTTPException(status_code=404, detail="Item não encontrado na carga")
+    
+    # Remover item do array
+    item_removido = carga["itens"].pop(item_index)
+    
+    # Atualizar no banco
+    await db.cargas.update_one(
+        {"id": carga_id},
+        {
+            "$set": {
+                "itens": carga["itens"],
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    return {
+        "ok": True,
+        "message": "Item excluído com sucesso",
+        "item_removido": {
+            "codigo_produto": item_removido.get("codigo_produto"),
+            "descricao": item_removido.get("descricao")
+        }
+    }
+
 # Sessões
 @api_router.post("/sessoes", response_model=Sessao)
 async def criar_sessao(input: SessaoCreate, conferente_id: str):
