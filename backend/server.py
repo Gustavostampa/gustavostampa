@@ -641,6 +641,7 @@ async def importar_multi(file: UploadFile = File(...), acao: str = Form("substit
 async def listar_cargas_collection(
     status: Optional[str] = None,
     tipo: Optional[str] = None,
+    data: Optional[str] = None,
     dataInicio: Optional[str] = None,
     dataFim: Optional[str] = None,
     page: int = 1,
