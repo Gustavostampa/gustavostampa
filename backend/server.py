@@ -837,20 +837,19 @@ async def registrar_leitura(input: LeituraCreate, conferente_id: str):
     # Normalizar EAN
     ean_normalizado = normalizar_ean(input.ean)
     
-    # 1. Buscar primeiro em produto_eans (novo sistema)
+    # 1. Buscar em produto_eans para mapear EAN → SKU
     produto_ean = await db.produto_eans.find_one({"ean": ean_normalizado, "ativo": True})
     
     if produto_ean:
         # EAN encontrado no sistema de múltiplos EANs
         sku = produto_ean["sku"]
-        fator_conversao = produto_ean.get("fator_conversao", 1)
-        quantidade_real = input.quantidade * fator_conversao
+        ean_busca = ean_normalizado
     else:
         # 2. Fallback: buscar no sistema antigo (produtos.ean)
         produto = await db.produtos.find_one({"ean": input.ean})
         if produto:
             sku = produto["codigo_produto"]
-            quantidade_real = input.quantidade
+            ean_busca = normalizar_ean(input.ean)
         else:
             # EAN não existe em nenhum cadastro - Sobra
             await registrar_sobra(input.carga_id, input.sessao_id, input.ean, input.quantidade, recipiente_sessao)
@@ -866,21 +865,27 @@ async def registrar_leitura(input: LeituraCreate, conferente_id: str):
             await db.leituras.insert_one(leitura.model_dump())
             return leitura
     
-    # 3. Buscar item na carga pelo SKU
+    # 3. Buscar item na carga pelo SKU + EAN
+    # IMPORTANTE: Match por código_produto E ean (não só código)
     item_idx = None
     for idx, item in enumerate(carga["itens"]):
+        # Normalizar EAN do item para comparação
+        item_ean_norm = normalizar_ean(item.get("ean", ""))
+        
         # Para Multi, considerar também o recipiente
         if carga["tipo"] == "multi":
-            if item["codigo_produto"] == sku and item.get("recipiente") == recipiente_sessao:
+            if (item["codigo_produto"] == sku and 
+                item_ean_norm == ean_busca and 
+                item.get("recipiente") == recipiente_sessao):
                 item_idx = idx
                 break
         else:
-            if item["codigo_produto"] == sku:
+            if item["codigo_produto"] == sku and item_ean_norm == ean_busca:
                 item_idx = idx
                 break
     
     if item_idx is None:
-        # SKU existe mas não está nesta carga/recipiente - Sobra
+        # SKU/EAN existe mas não está nesta carga/recipiente - Sobra
         descricao = produto_ean.get("descricao") if produto_ean else (produto.get("descricao") if 'produto' in locals() else None)
         await registrar_sobra(input.carga_id, input.sessao_id, input.ean, input.quantidade, recipiente_sessao, descricao)
         
@@ -895,8 +900,8 @@ async def registrar_leitura(input: LeituraCreate, conferente_id: str):
         await db.leituras.insert_one(leitura.model_dump())
         return leitura
     
-    # 4. Atualizar quantidade conferida (aplicando fator de conversão)
-    nova_qtd_conferida = carga["itens"][item_idx]["quantidade_conferida"] + quantidade_real
+    # 4. Atualizar quantidade conferida (SEM multiplicação)
+    nova_qtd_conferida = carga["itens"][item_idx]["quantidade_conferida"] + input.quantidade
     qtd_esperada = carga["itens"][item_idx]["quantidade"]
     
     resultado = "ok" if nova_qtd_conferida == qtd_esperada else "diferenca"
@@ -915,7 +920,7 @@ async def registrar_leitura(input: LeituraCreate, conferente_id: str):
         carga_id=input.carga_id,
         conferente_id=conferente_id,
         ean=input.ean,
-        quantidade=quantidade_real,  # Armazena quantidade convertida
+        quantidade=input.quantidade,
         resultado=resultado
     )
     await db.leituras.insert_one(leitura.model_dump())
