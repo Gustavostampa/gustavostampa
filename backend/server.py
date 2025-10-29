@@ -684,14 +684,20 @@ async def listar_cargas_collection(
             logger.debug(f"[GET /api/cargas] Filtro tipo aplicado: {tipo}")
         
         # Data
-        if dataInicio or dataFim:
+        if data or dataInicio or dataFim:
             filtro["data"] = {}
-            if dataInicio:
-                filtro["data"]["$gte"] = dataInicio
-                logger.debug(f"[GET /api/cargas] Filtro dataInicio: {dataInicio}")
-            if dataFim:
-                filtro["data"]["$lte"] = dataFim
-                logger.debug(f"[GET /api/cargas] Filtro dataFim: {dataFim}")
+            if data:
+                # Single date filter - exact match
+                filtro["data"] = data
+                logger.debug(f"[GET /api/cargas] Filtro data exata: {data}")
+            else:
+                # Range filter
+                if dataInicio:
+                    filtro["data"]["$gte"] = dataInicio
+                    logger.debug(f"[GET /api/cargas] Filtro dataInicio: {dataInicio}")
+                if dataFim:
+                    filtro["data"]["$lte"] = dataFim
+                    logger.debug(f"[GET /api/cargas] Filtro dataFim: {dataFim}")
         
         # IMPORTANTE: NÃO filtrar por conferente_id quando role=gestor
         logger.debug(f"[GET /api/cargas] Filtro Mongo final: {filtro}")
