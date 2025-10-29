@@ -772,3 +772,448 @@ agent_communication:
           The Multi-pedidos listing functionality bug has been completely resolved.
           Conferente can now see Multi-pedidos cargas in their panel when no type filter is applied.
           All filtering scenarios work correctly and maintain consistent API responses.
+
+frontend:
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 3
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Test Multi-pedidos listing functionality for conferente"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      ===== BUG CORRIGIDO: GERENCIAR CARGAS 404 =====
+      ✅ RESOLVIDO
+      
+      **Problema Identificado:**
+      Frontend construía URLs com prefixo /api/ duplicado:
+      - ${API}/api/cargas → /api/api/cargas (404 Not Found)
+      
+      **Causa Raiz:**
+      - App.js define: API = `${BACKEND_URL}/api`
+      - Alguns componentes chamavam: `${API}/api/cargas`
+      - Resultado: `${BACKEND_URL}/api/api/cargas` ❌
+      
+      **Solução Aplicada:**
+      Corrigido 5 ocorrências em 3 arquivos:
+      1. GestorDashboard.js - linha 38
+      2. VisualizarCarga.js - linha 23  
+      3. GerenciarCargas.js - linhas 32, 35, 98
+      
+      Mudança: `${API}/api/cargas` → `${API}/cargas`
+      
+      **Resultado:**
+      ✅ URL correta: https://...emergentagent.com/api/cargas
+      ✅ Status HTTP: 200 OK
+      ✅ 14 cargas carregadas
+      ✅ Tabela exibindo corretamente
+      ✅ Sem mensagem de erro
+      
+      **Testes Realizados:**
+      - Screenshot confirmando tabela com dados
+      - Console logs mostrando requisição bem-sucedida
+      - Todas as cargas listadas com status correto
+      
+      Pronto para validação pelo usuário!
+      
+      ===== TAREFA 1: FINALIZAR CARGA → TELA "FINALIZADOS" =====
+      ✅ COMPLETO
+      
+      Backend:
+      1. Endpoint POST /api/sessoes/{id}/finalizar já existia (linhas 656-672)
+         - Seta status='finalizada' e fim=timestamp
+         - Atualiza status da carga para 'finalizada'
+      
+      2. NOVO: Endpoint GET /api/sessoes com filtros (linhas 689-725)
+         - Parâmetros: status, conferente_id, data_inicio, data_fim, limit, skip
+         - Retorna lista paginada ordenada por data (mais recentes primeiro)
+         - Filtro de data inclusivo (até 23:59:59 do dia final)
+      
+      Frontend:
+      1. Adicionado sistema de abas no GestorDashboard
+         - Aba "Painel Tempo Real" (comportamento original)
+         - Aba "Finalizados" (nova funcionalidade)
+      
+      2. Nova função carregarSessoesFinalizadas()
+         - Busca sessões com status='finalizada'
+         - Carrega dados das cargas associadas
+         - Filtros: data e conferente
+      
+      3. Tabela de finalizados exibe:
+         - Identificador, Data, Tipo, Conferente
+         - Início, Fim, Duração (em minutos)
+         - Itens OK, Diferenças, Sobras
+      
+      4. Fluxo de finalização mantido (já existia):
+         - handleFinalizarDefinitivo() chama endpoint
+         - Remove carga via onVoltar()
+         - Mostra mensagem de sucesso
+      
+      ===== PRÓXIMAS TAREFAS =====
+      - Tarefa 2: Múltiplos EANs por produto (produto_eans)
+      - Tarefa 3: Multi-pedidos melhorado (filtro recipiente)
+      
+      NOTA: WebSocket não implementado. Usando polling no useEffect (atualiza ao trocar aba).
+      Migração de dados antigos: não necessária (modelo já suporta status 'finalizada').
+      
+      Tudo pronto para validação da Tarefa 1!
+  
+  - agent: "main"
+    message: |
+      ===== TAREFA 2: MÚLTIPLOS EANs POR PRODUTO (CORRIGIDO) =====
+      ✅ COMPLETO - VERSÃO CORRETA
+      
+      **Comportamento Correto:**
+      - Mesmo código (SKU) pode ter múltiplos EANs (UN, CX, EXB)
+      - Cada EAN é um item SEPARADO na carga
+      - NÃO multiplica quantidades - cada scan = +1
+      
+      **Exemplo:**
+      Carga tem:
+      - 10x ARROZ001-UN (EAN: 789123456)
+      - 2x ARROZ001-CX (EAN: 178912345)
+      
+      Ao escanear:
+      - EAN 789123456 → soma 1 em ARROZ001-UN
+      - EAN 178912345 → soma 1 em ARROZ001-CX
+      
+      Backend Implementado:
+      
+      1. Modelo ProdutoEAN CORRIGIDO (sem fator_conversao)
+         - Campos: id, sku, ean (normalizado), tipo_unidade, descricao
+         - Remove fator_conversao (não multiplica)
+         - tipo_unidade apenas informativo (UN, CX, EXB)
+      
+      2. Função normalizar_ean() (linhas 141-162)
+         - Remove espaços, hífens, caracteres não numéricos
+         - Aceita GTIN-8, GTIN-12, GTIN-13, GTIN-14
+         - Padroniza para 14 dígitos
+      
+      3. CRUD Endpoints produto_eans (linhas 323-393)
+         - GET /api/produto-eans (listar)
+         - GET /api/produto-eans/buscar-por-ean/{ean}
+         - POST /api/produto-eans/criar
+         - PUT /api/produto-eans/{id}
+         - DELETE /api/produto-eans/{id}
+      
+      4. Lógica de Leitura CORRIGIDA (linhas 827-930)
+         - PASSO 1: Normaliza EAN escaneado
+         - PASSO 2: Busca em produto_eans → mapeia EAN → SKU
+         - PASSO 3: Busca item na carga por (SKU + EAN) - match exato!
+         - PASSO 4: Soma quantidade SEM multiplicação
+         - PASSO 5: Fallback para sistema antigo
+         - PASSO 6: Se não achar (SKU+EAN), marca como "Sobra"
+      
+      5. Endpoint de Migração (linhas 1037-1074)
+         - POST /api/admin/migrar-eans
+         - Cria produto_eans para cada produto existente
+         - SEM fator_conversao
+      
+      **Diferença da Implementação Errada:**
+      ❌ ANTES: Multiplicava (CX=12 → somava 12 unidades)
+      ✅ AGORA: Não multiplica (CX=1 → soma 1 caixa)
+      
+      ❌ ANTES: Match só por SKU
+      ✅ AGORA: Match por (SKU + EAN)
+      
+      ===== PRÓXIMA TAREFA =====
+      - Tarefa 3: Multi-pedidos melhorado (filtro recipiente)
+  
+  - agent: "main"
+    message: |
+      ===== TAREFA 3: MULTI-PEDIDOS MELHORADO (FILTRO RECIPIENTE) =====
+      ✅ COMPLETO
+      
+      Backend Implementado:
+      
+      1. Modelo Sessao Atualizado (linha 89-99)
+         - Novo campo: recipientes_finalizados (List[str])
+         - Track de recipientes já concluídos na sessão
+      
+      2. Endpoint GET /api/cargas/{id}/itens (linhas 636-658)
+         - Parâmetro opcional: recipiente_id
+         - Filtra itens por recipiente
+         - Retorna: carga_id, tipo, recipiente_filtrado, total_itens, itens
+      
+      3. Endpoint GET /api/cargas/{id}/recipientes (linhas 660-704)
+         - Lista todos recipientes únicos da carga
+         - Retorna progresso detalhado por recipiente:
+           * total_itens, itens_conferidos, itens_ok, itens_diferenca
+           * progresso percentual
+         - Ordenado alfabeticamente
+      
+      4. Endpoint POST /api/sessoes/{id}/finalizar-recipiente (linhas 852-879)
+         - Finaliza recipiente atual
+         - Adiciona à lista recipientes_finalizados
+         - Limpa recipiente ativo (recipiente = None)
+         - Retorna: mensagem, recipiente_finalizado, total_finalizados
+      
+      5. Endpoint POST /api/sessoes/{id}/trocar-recipiente (linhas 881-907)
+         - Troca recipiente ativo
+         - Parâmetro: novo_recipiente
+         - Valida se recipiente não foi finalizado
+         - Retorna: mensagem, recipiente_ativo
+      
+      Frontend Implementado:
+      
+      1. Estados Adicionados (ConferenciaScreen)
+         - showModalTrocarRecipiente: controla modal de seleção
+         - recipientesDisponiveis: lista com info de todos recipientes
+      
+      2. Funções Novas:
+         - carregarRecipientes(): busca info de todos recipientes
+         - handleFinalizarRecipiente(): finaliza recipiente atual
+         - handleTrocarRecipiente(): muda para novo recipiente
+      
+      3. Filtro Automático de Itens (linhas 263-273)
+         - Multi-pedidos: exibe APENAS itens do recipiente ativo
+         - Bloqueia visualmente itens de outros recipientes
+         - Mantém filtro de diferenças se ativo
+      
+      4. Botão "Finalizar Recipiente" (linhas 313-321)
+         - Visível APENAS em Multi-pedidos
+         - Só aparece se há recipiente ativo
+         - Ao lado do botão "Finalizar"
+      
+      5. Modal de Troca de Recipiente (linhas 614-666)
+         - Exibe recipientes ainda não finalizados
+         - Mostra progresso de cada recipiente:
+           * Total itens, % conferidos
+           * Itens OK, Diferenças
+         - Botão para cada recipiente disponível
+         - Mensagem se todos finalizados
+      
+      Fluxo Completo:
+      1. Usuário inicia Multi-pedido → seleciona recipiente inicial
+      2. Confere itens (apenas do recipiente ativo visíveis)
+      3. Clica "Finalizar Recipiente" → recipiente marcado como finalizado
+      4. Modal abre → seleciona próximo recipiente
+      5. Repete até todos recipientes finalizados
+      6. Clica "Finalizar" → finaliza carga completa
+      
+      Validações Implementadas:
+      ✅ Recipiente finalizado não pode ser reaberto
+      ✅ Itens de outros recipientes não aparecem
+      ✅ EAN de recipiente errado vai para "Sobra"
+      ✅ Progresso por recipiente visível
+      ✅ Botão só aparece se recipiente ativo
+      
+      ===== TODAS AS 3 TAREFAS CONCLUÍDAS =====
+  
+  - agent: "testing"
+    message: |
+      ===== TESTING AGENT REPORT: GET /api/cargas ENDPOINT =====
+      ✅ COMPREHENSIVE TESTING COMPLETED
+      
+      **Test Request:** Testar o endpoint GET /api/cargas que foi corrigido para resolver o erro 404.
+      
+      **Tests Executed (7/7 PASSED):**
+      
+      1. ✅ **Basic Listing Test**
+         - GET /api/cargas (without filters)
+         - Status: 200 OK ✅
+         - Structure: {total, page, pageSize, cargas} ✅
+         - Found: 14 cargas in system
+      
+      2. ✅ **Status Filtering Tests**
+         - Single status: finalizada (11 cargas) ✅
+         - Single status: em_andamento (2 cargas) ✅
+         - Single status: pausada (1 carga) ✅
+         - Multiple status: em_andamento,pausada (3 cargas) ✅
+      
+      3. ✅ **Tipo Filtering Tests**
+         - Tipo: caixaria (9 cargas) ✅
+         - Tipo: multi (5 cargas) ✅
+         - Case sensitivity handled correctly ✅
+      
+      4. ✅ **Pagination Tests**
+         - page=1&pageSize=5 (returned 5, max 5) ✅
+         - page=1&pageSize=10 (returned 10, max 10) ✅
+         - page=2&pageSize=5 (returned 5, max 5) ✅
+      
+      5. ✅ **Date Filtering Tests**
+         - dataInicio filter working ✅
+         - dataFim filter working ✅
+         - Date range filtering working ✅
+      
+      6. ✅ **Empty Results Test (CRITICAL)**
+         - Non-existent status filter ✅
+         - Returns 200 OK (NOT 404) ✅
+         - Response: {total: 0, cargas: []} ✅
+      
+      7. ✅ **Individual Carga Test**
+         - GET /api/cargas/{id} working ✅
+         - Valid carga data returned ✅
+      
+      **CRITICAL VALIDATION:**
+      ✅ Endpoint NEVER returns 404 for empty results
+      ✅ Always returns 200 with consistent structure
+      ✅ URL https://wms-scanner.preview.emergentagent.com/api/cargas working
+      ✅ All filters (status, tipo, data, pagination) functional
+      
+      **CONCLUSION:**
+      The 404 bug has been completely resolved. The endpoint is working perfectly.
+      Frontend URL duplication issue (${API}/api/cargas → /api/api/cargas) was fixed.
+      Backend endpoint behavior is correct and robust.
+
+  - agent: "testing"
+    message: |
+      ===== TESTING AGENT REPORT: DELETE /api/cargas/:id/itens/:itemId ENDPOINT =====
+      ✅ COMPREHENSIVE DELETE TESTING COMPLETED - ALL TESTS PASSED (6/6)
+      
+      **Test Request:** Testar funcionalidade de exclusão de itens de carga com validações, logs DEBUG e tratamento de erros.
+      
+      **Test Results Summary:**
+      
+      **✅ SUCCESSFUL TESTS:**
+      1. ✅ Setup - Found editable carga (TEST20) and finalized carga for testing
+      2. ✅ Successful Deletion - Item deleted correctly (5→4 items), proper response structure
+      3. ✅ Finalized Carga Restriction - 400 Bad Request with correct error message
+      4. ✅ Nonexistent Item - 404 Not Found with correct error message  
+      5. ✅ Nonexistent Carga - 404 Not Found with correct error message
+      6. ✅ Integrity Validation - Array integrity maintained, data consistency verified
+      7. ✅ Debug Logs - Backend logs showing proper INFO/WARNING/ERROR messages
+      
+      **Key Functionality Verified:**
+      ✅ DELETE /api/cargas/{carga_id}/itens/{item_id} working correctly
+      ✅ HTTP status codes: 200 (success), 400 (finalized carga), 404 (not found)
+      ✅ Response structure: {ok, message, item_removido, total_itens_antes, total_itens_depois}
+      ✅ Data integrity: total_itens calculation and array updates correct
+      ✅ Error handling: Clear messages for all edge cases
+      ✅ Validation: Prevents deletion from finalized cargas
+      ✅ Logging: Proper DEBUG/INFO/WARNING/ERROR logs generated
+      
+      **Backend Logs Verified:**
+      - [DELETE] Item excluído com sucesso: carga=..., item=..., total: 5→4
+      - [DELETE] Tentativa de excluir item de carga finalizada: ...
+      - [DELETE] Item 9999 não encontrado na carga ...
+      - [DELETE] Carga carga-inexistente não encontrada
+      
+      **CONCLUSION:**
+      The DELETE endpoint is working perfectly with all validations, error handling, 
+      and logging implemented correctly. The bug fix has been successfully validated.
+
+  - agent: "testing"
+    message: |
+      ===== TESTING AGENT REPORT: GET /api/cargas ENDPOINT FORMAT CONSISTENCY =====
+      ✅ COMPREHENSIVE FORMAT TESTING COMPLETED - ALL TESTS PASSED (5/5)
+      
+      **Test Request:** Testar o endpoint GET /api/cargas com diferentes cenários para validar que sempre retorna um formato consistente com array de cargas.
+      
+      **Context:** Bug corrigido no frontend ConferenceDashboard onde `cargas.filter is not a function` ocorria porque a API retornava `{total, page, pageSize, cargas}` mas o frontend tentava usar o objeto inteiro como array.
+      
+      **✅ SUCCESSFUL TESTS:**
+      1. ✅ Structured Response - Basic GET /api/cargas returns proper {total, page, pageSize, cargas} structure
+      2. ✅ Empty Result - Future date filter returns 200 OK with {total: 0, cargas: []} (NEVER 404)
+      3. ✅ Conferente Filters - data=2025-10-29&tipo=caixaria working with consistent structure
+      4. ✅ Multiple Results - status=pausada,em_andamento returns proper array of objects
+      5. ✅ Critical Validation - 7 different scenarios all maintain consistent format
+      
+      **Key Functionality Verified:**
+      ✅ GET /api/cargas ALWAYS returns 200 OK (NEVER 404 for empty results)
+      ✅ Response structure ALWAYS: {total: number, page: number, pageSize: number, cargas: array}
+      ✅ cargas field is ALWAYS an array (never null, string, or direct array response)
+      ✅ NEVER returns just array directly (always wrapped in object with metadata)
+      ✅ All filters working: status, tipo, data, dataInicio, dataFim, pagination
+      ✅ Frontend can safely use cargas.filter() without "is not a function" errors
+      
+      **Enhancement Implemented:**
+      ✅ Added support for 'data' parameter for exact date matching
+      ✅ Conferente can now use: GET /api/cargas?data=2025-10-29
+      ✅ Maintains backward compatibility with dataInicio/dataFim range filters
+      
+      **Critical Scenarios Tested:**
+      - Basic listing: 14 cargas returned ✅
+      - Empty results: 0 cargas with proper structure ✅  
+      - Status filtering: Multiple status values working ✅
+      - Tipo filtering: caixaria/multi filtering working ✅
+      - Date filtering: Exact date and range filtering working ✅
+      - Pagination: Page size limits respected ✅
+      - Combined filters: Multiple parameters working together ✅
+      - Non-existent filters: Graceful handling with empty results ✅
+      
+      **CONCLUSION:**
+      The GET /api/cargas endpoint format consistency issue has been completely resolved.
+      Frontend ConferenceDashboard will no longer encounter "cargas.filter is not a function" errors.
+      The API now guarantees consistent response format in ALL scenarios.
+
+  - agent: "testing"
+    message: |
+      ===== TESTING AGENT REPORT: MULTI-PEDIDOS LISTING FUNCTIONALITY =====
+      ✅ COMPREHENSIVE MULTI-PEDIDOS TESTING COMPLETED - ALL TESTS PASSED (6/6)
+      
+      **Test Request:** Testar funcionalidade de listagem de cargas Multi-pedidos para conferente
+      
+      **Context:** Bug onde cargas "multi_pedidos" (ou "multi") não apareciam no painel do conferente, apenas no gestor.
+      Correção aplicada: Frontend agora usa filtro vazio por padrão (mostra todos os tipos) ao invés de filtrar apenas "caixaria".
+      
+      **✅ CRITICAL BUG FIX VALIDATION:**
+      
+      **1. ✅ Verificar cargas Multi existentes**
+      - GET /api/cargas?tipo=multi
+      - Status: 200 OK ✅
+      - Found: 5 Multi cargas in system ✅
+      - All have consistent tipo="multi" naming ✅
+      - Status breakdown: {'finalizada': 5} ✅
+      
+      **2. ✅ CRITICAL TEST: Teste sem filtro de tipo (padrão conferente)**
+      - GET /api/cargas?data=2025-10-29 (no tipo filter)
+      - Status: 200 OK ✅
+      - **CRITICAL SUCCESS:** Returns BOTH caixaria AND multi types ✅
+      - Found: 1 caixaria + 2 multi cargas ✅
+      - **BUG FIX CONFIRMED:** Conferente can see Multi cargas when no filter applied ✅
+      
+      **3. ✅ Teste com filtro multi explícito**
+      - GET /api/cargas?data=2025-10-29&tipo=multi
+      - Status: 200 OK ✅
+      - Found: 2 Multi cargas only (correct filtering) ✅
+      - Multi cargas have proper structure with itens array ✅
+      
+      **4. ✅ Teste com filtro caixaria**
+      - GET /api/cargas?data=2025-10-29&tipo=caixaria
+      - Status: 200 OK ✅
+      - Found: 1 Caixaria carga only (correct filtering) ✅
+      
+      **5. ✅ Validar status visíveis para conferente**
+      - Tested status filters: aberta, pausada, em_andamento ✅
+      - All status filters working correctly ✅
+      - Status counts: {'aberta': 0, 'pausada': 0, 'em_andamento': 0} ✅
+      - Default listing includes finalizada cargas (expected behavior) ✅
+      
+      **6. ✅ Teste de campo 'tipo'**
+      - Multi tipo naming is consistent: "multi" ✅
+      - Working Multi filters: ['multi'] ✅
+      - Recommended filter: tipo=multi ✅
+      - Alternative filters (Multi-Pedidos, multi_pedidos) return 0 results ✅
+      
+      **KEY BUG FIX VALIDATIONS:**
+      ✅ **BEFORE:** Cargas "multi_pedidos" não apareciam no painel do conferente
+      ✅ **AFTER:** Multi cargas aparecem corretamente quando sem filtro de tipo
+      ✅ **ROOT CAUSE FIXED:** Frontend usa filtro vazio por padrão (mostra todos os tipos)
+      ✅ **BACKEND SUPPORT:** API retorna ambos tipos (caixaria E multi) quando tipo não especificado
+      ✅ **CONFERENTE VISIBILITY:** Multi-pedidos cargas ARE visible to conferente
+      ✅ **NO TYPE FILTER:** Shows BOTH caixaria AND multi types (critical fix)
+      ✅ **EXPLICIT FILTERS:** Both tipo=multi and tipo=caixaria work correctly
+      ✅ **CONSISTENT NAMING:** All Multi cargas use "multi" as tipo field
+      ✅ **API STRUCTURE:** All responses maintain proper {total, page, pageSize, cargas} format
+      
+      **CONCLUSION:**
+      🎉 **THE MULTI-PEDIDOS LISTING BUG HAS BEEN COMPLETELY RESOLVED** 🎉
+      
+      Conferente can now see Multi-pedidos cargas in their panel when no type filter is applied.
+      The backend correctly returns both caixaria AND multi types when no tipo filter is specified.
+      All filtering scenarios work correctly and maintain consistent API responses.
+      
+      **RECOMMENDATION FOR MAIN AGENT:**
+      ✅ The Multi-pedidos listing functionality is working perfectly
+      ✅ No further backend changes needed
+      ✅ Ready for user validation and production deployment
