@@ -220,17 +220,23 @@ export default function VisualizarCarga({ carga, onVoltar }) {
               <button
                 onClick={() => setShowModalConfirmacao(false)}
                 className="btn-outline"
+                disabled={excluindo}
                 data-testid="btn-cancelar"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmarExclusao}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition-colors flex items-center gap-2"
+                disabled={excluindo}
+                className={`px-4 py-2 rounded-lg font-bold transition-colors flex items-center gap-2 ${
+                  excluindo 
+                    ? 'bg-gray-400 text-gray-700 cursor-not-allowed' 
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
                 data-testid="btn-confirmar-exclusao"
               >
                 <Trash2 size={18} />
-                Excluir Item
+                {excluindo ? 'Excluindo...' : 'Excluir Item'}
               </button>
             </div>
           </div>
