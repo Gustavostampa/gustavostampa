@@ -4,12 +4,15 @@ import { API } from '../App';
 import ImportModal from '../components/ImportModal';
 import UsuariosModal from '../components/UsuariosModal';
 import ProdutosScreen from './ProdutosScreen';
-import { LogOut, Upload, Users, BarChart3, Trash2, RefreshCw, Package } from 'lucide-react';
+import VisualizarCarga from '../components/VisualizarCarga';
+import { LogOut, Upload, Users, BarChart3, Trash2, RefreshCw, Package, Eye } from 'lucide-react';
 
 export default function GestorDashboard({ usuario, onLogout }) {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showUsuariosModal, setShowUsuariosModal] = useState(false);
   const [showProdutos, setShowProdutos] = useState(false);
+  const [showVisualizarCarga, setShowVisualizarCarga] = useState(false);
+  const [cargaSelecionada, setCargaSelecionada] = useState(null);
   const [importType, setImportType] = useState(null);
   const [stats, setStats] = useState([]);
   const [filtros, setFiltros] = useState({ data: '', tipo: '', conferente_id: '' });
