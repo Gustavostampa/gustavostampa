@@ -103,13 +103,11 @@
 #====================================================================================================
 
 user_problem_statement: |
-  Fix "Continuar Conferência" (resume paused load) functionality which was broken.
-  User reported: "Agora o problema se agravou não consigo retornar para a carga que estava pausada, 
-  quando clico em continuar conferencia dá problema"
+  Fix "Gerenciar Cargas" view showing 404 error when listing loads.
+  User reported: Tab displays "Falha ao carregar as cargas. Request failed with status code 404"
   
-  Also implement full "Sobra" (out-of-list EANs) tracking with dedicated UI tab.
-  
-  Ensure Multi-pedidos recipient flow is complete with recipient display in conferencing screen.
+  Root cause: Frontend was constructing URL with duplicate /api/ prefix causing 404.
+  URL was: /api/api/cargas instead of /api/cargas
 
 backend:
   - task: "Fix resume paused load endpoint"
