@@ -261,8 +261,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Fix GET /api/cargas endpoint routing"
-    - "Fix duplicated /api/ prefix in URLs"
+    - "Test DELETE /api/cargas/:id/itens/:itemId endpoint functionality"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
