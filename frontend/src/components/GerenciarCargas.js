@@ -21,10 +21,15 @@ export default function GerenciarCargas({ onVoltar }) {
       if (filtros.tipo) params.tipo = filtros.tipo;
       if (filtros.status) params.status = filtros.status;
 
+      console.log('Carregando cargas com params:', params);
+      console.log('API URL:', `${API}/api/cargas`);
+      
       const response = await axios.get(`${API}/api/cargas`, { params });
+      console.log('Cargas recebidas:', response.data.length);
       setCargas(response.data);
     } catch (error) {
       console.error('Erro ao carregar cargas:', error);
+      console.error('Detalhes do erro:', error.response?.data);
     }
   };
 
