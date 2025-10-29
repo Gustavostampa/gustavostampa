@@ -35,22 +35,30 @@ export default function GerenciarCargas({ onVoltar }) {
       
       const response = await axios.get(`${API}/api/cargas`, { params });
       console.log('[Frontend] Resposta recebida:', response.data);
+      console.log('[Frontend] Status:', response.status);
       
       // A resposta tem formato { total, page, pageSize, cargas }
-      if (response.data.cargas) {
+      if (response.data && response.data.cargas) {
         console.log('[Frontend] Total:', response.data.total);
         console.log('[Frontend] Cargas recebidas:', response.data.cargas.length);
         setCargas(response.data.cargas);
         setTotal(response.data.total);
-      } else {
-        console.warn('[Frontend] Formato inesperado, usando array direto');
+      } else if (Array.isArray(response.data)) {
+        console.warn('[Frontend] Formato array direto');
         setCargas(response.data);
         setTotal(response.data.length);
+      } else {
+        console.error('[Frontend] Formato de resposta desconhecido:', response.data);
+        setError('Formato de resposta inesperado');
+        setCargas([]);
+        setTotal(0);
       }
     } catch (error) {
       console.error('[Frontend] Erro ao carregar cargas:', error);
+      console.error('[Frontend] Error message:', error.message);
+      console.error('[Frontend] Response:', error.response);
       console.error('[Frontend] Detalhes:', error.response?.data);
-      setError('Falha ao carregar as cargas. Tente novamente.');
+      setError(`Falha ao carregar as cargas. ${error.message || 'Tente novamente.'}`);
       setCargas([]);
       setTotal(0);
     } finally {
