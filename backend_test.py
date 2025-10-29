@@ -435,11 +435,11 @@ class CargaItemDeletionTester:
 
 def main():
     """Main function"""
-    tester = CargasAPITester()
+    tester = CargaItemDeletionTester()
     success = tester.run_all_tests()
     
     if success:
-        print(f"\n{Colors.GREEN}{Colors.BOLD}🎉 ALL TESTS PASSED - ENDPOINT IS WORKING CORRECTLY{Colors.ENDC}")
+        print(f"\n{Colors.GREEN}{Colors.BOLD}🎉 ALL TESTS PASSED - DELETION ENDPOINT IS WORKING CORRECTLY{Colors.ENDC}")
         sys.exit(0)
     else:
         print(f"\n{Colors.RED}{Colors.BOLD}💥 SOME TESTS FAILED - ISSUES FOUND{Colors.ENDC}")
