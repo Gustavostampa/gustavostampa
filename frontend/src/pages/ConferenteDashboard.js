@@ -19,7 +19,7 @@ function toArrayCargas(data) {
 
 export default function ConferenteDashboard({ usuario, onLogout }) {
   const [dataSelecionada, setDataSelecionada] = useState('');
-  const [tipoSelecionado, setTipoSelecionado] = useState('caixaria');
+  const [tipoSelecionado, setTipoSelecionado] = useState(''); // Vazio = todos os tipos
   const [cargas, setCargas] = useState([]);
   const [cargaSelecionada, setCargaSelecionada] = useState(null);
   const [sessaoAtiva, setSessaoAtiva] = useState(null);
