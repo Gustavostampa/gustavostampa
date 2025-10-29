@@ -18,6 +18,8 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
   const [filtrarDiferencas, setFiltrarDiferencas] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState('itens'); // 'itens' ou 'sobras'
   const [sobras, setSobras] = useState([]);
+  const [showModalTrocarRecipiente, setShowModalTrocarRecipiente] = useState(false);
+  const [recipientesDisponiveis, setRecipientesDisponiveis] = useState([]);
   const inputRef = useRef(null);
 
   useEffect(() => {
