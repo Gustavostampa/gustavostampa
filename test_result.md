@@ -176,7 +176,39 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: |
-      Implementadas três melhorias (TAREFA 1 COMPLETA, tarefas 2 e 3 pendentes):
+      ===== BUG CORRIGIDO: GERENCIAR CARGAS 404 =====
+      ✅ RESOLVIDO
+      
+      **Problema Identificado:**
+      Frontend construía URLs com prefixo /api/ duplicado:
+      - ${API}/api/cargas → /api/api/cargas (404 Not Found)
+      
+      **Causa Raiz:**
+      - App.js define: API = `${BACKEND_URL}/api`
+      - Alguns componentes chamavam: `${API}/api/cargas`
+      - Resultado: `${BACKEND_URL}/api/api/cargas` ❌
+      
+      **Solução Aplicada:**
+      Corrigido 5 ocorrências em 3 arquivos:
+      1. GestorDashboard.js - linha 38
+      2. VisualizarCarga.js - linha 23  
+      3. GerenciarCargas.js - linhas 32, 35, 98
+      
+      Mudança: `${API}/api/cargas` → `${API}/cargas`
+      
+      **Resultado:**
+      ✅ URL correta: https://...emergentagent.com/api/cargas
+      ✅ Status HTTP: 200 OK
+      ✅ 14 cargas carregadas
+      ✅ Tabela exibindo corretamente
+      ✅ Sem mensagem de erro
+      
+      **Testes Realizados:**
+      - Screenshot confirmando tabela com dados
+      - Console logs mostrando requisição bem-sucedida
+      - Todas as cargas listadas com status correto
+      
+      Pronto para validação pelo usuário!
       
       ===== TAREFA 1: FINALIZAR CARGA → TELA "FINALIZADOS" =====
       ✅ COMPLETO
