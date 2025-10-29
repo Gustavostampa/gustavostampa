@@ -373,9 +373,75 @@ class MultiPedidosTester:
             self.test_results.append(("Conferente Status Visibility", False, "❌ Status visibility issues"))
             return False
     
-    # Removed integrity validation test as it was for DELETE endpoint
-    
-    # Removed debug logs test as it was specific to DELETE endpoint
+    def test_tipo_field_naming(self):
+        """Test 6: Teste de campo 'tipo' - verificar nomenclatura"""
+        print_header("TEST 6: Teste de campo 'tipo' - verificar nomenclatura")
+        
+        print_info("Testing field naming: 'multi', 'Multi-Pedidos', 'multi_pedidos'")
+        
+        # Get all cargas to analyze tipo field values
+        status_code, data = self.make_request("/cargas")
+        
+        if status_code != 200:
+            print_error(f"Expected status 200, got {status_code}")
+            self.test_results.append(("Tipo Field Naming", False, f"❌ Status {status_code}"))
+            return False
+        
+        tipo_values = {}
+        multi_variations = []
+        
+        for carga in data.get("cargas", []):
+            tipo = carga.get("tipo", "unknown")
+            tipo_values[tipo] = tipo_values.get(tipo, 0) + 1
+            
+            # Check for Multi variations
+            if tipo.lower() in ["multi", "multi-pedidos", "multi_pedidos"]:
+                multi_variations.append(tipo)
+                print_info(f"Multi carga: {carga.get('identificador_carga')} - Tipo: '{tipo}'")
+        
+        print_info(f"All tipo values found: {tipo_values}")
+        
+        # Analyze Multi naming consistency
+        unique_multi_names = list(set(multi_variations))
+        print_info(f"Multi tipo variations: {unique_multi_names}")
+        
+        if len(unique_multi_names) > 1:
+            print_warning(f"⚠️ Multiple Multi naming conventions found: {unique_multi_names}")
+            print_warning("This could cause filter inconsistencies")
+        elif len(unique_multi_names) == 1:
+            print_success(f"✅ Consistent Multi naming: '{unique_multi_names[0]}'")
+        else:
+            print_warning("No Multi cargas found to analyze naming")
+        
+        # Test filter compatibility with different naming
+        filter_tests = ["multi", "Multi-Pedidos", "multi_pedidos"]
+        filter_results = {}
+        
+        for filter_value in filter_tests:
+            print_info(f"Testing filter: tipo={filter_value}")
+            status_code, filter_data = self.make_request("/cargas", {"tipo": filter_value})
+            
+            if status_code == 200:
+                count = filter_data.get("total", 0)
+                filter_results[filter_value] = count
+                print_info(f"Filter '{filter_value}': {count} cargas")
+            else:
+                filter_results[filter_value] = f"Error {status_code}"
+        
+        print_info(f"Filter results: {filter_results}")
+        
+        # Determine which filter works
+        working_filters = [k for k, v in filter_results.items() if isinstance(v, int) and v > 0]
+        
+        if working_filters:
+            print_success(f"✅ Working Multi filters: {working_filters}")
+            recommended_filter = working_filters[0]
+            print_success(f"✅ Recommended filter for Multi: tipo={recommended_filter}")
+        else:
+            print_warning("⚠️ No Multi filter returned results (may be no Multi cargas)")
+        
+        self.test_results.append(("Tipo Field Naming", True, f"✅ Multi variations: {unique_multi_names}, Working filters: {working_filters}"))
+        return True
     
     def run_all_tests(self):
         """Run all tests"""
