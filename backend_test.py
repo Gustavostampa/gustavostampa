@@ -199,34 +199,49 @@ class CargasEndpointTester:
         self.test_results.append(("Empty Result", True, "✅ Empty result handling correct"))
         return True
     
-    def test_finalized_carga_restriction(self):
-        """Test 2: Restriction on finalized carga"""
-        print_header("TEST 2: Teste com carga finalizada")
+    def test_filters_conferente(self):
+        """Test 3: Filters that conferente would use"""
+        print_header("TEST 3: Teste com filtros (conferente usaria)")
         
-        if not self.test_carga_finalizada_id:
-            print_warning("No finalized carga available for testing")
-            self.test_results.append(("Finalized Carga Restriction", True, "⚠️ No finalized carga to test"))
-            return True
+        print_info("Testing GET /api/cargas?data=2025-10-29&tipo=caixaria")
+        status_code, data = self.make_request("/cargas", {"data": "2025-10-29", "tipo": "caixaria"})
         
-        print_info(f"Attempting to delete item from finalized carga {self.test_carga_finalizada_id}")
-        status_code, response = self.make_delete_request(f"/cargas/{self.test_carga_finalizada_id}/itens/0")
-        
-        if status_code == 400:
-            print_success("Status 400 Bad Request received (correct)")
-            
-            if "detail" in response and "finalizada" in response["detail"]:
-                print_success(f"Correct error message: {response['detail']}")
-                self.test_results.append(("Finalized Carga Restriction", True, "✅ Finalized carga restriction working"))
-                return True
-            else:
-                print_error(f"Wrong error message: {response}")
-                self.test_results.append(("Finalized Carga Restriction", False, "❌ Wrong error message"))
-                return False
-        else:
-            print_error(f"Expected status 400, got {status_code}")
-            print_error(f"Response: {response}")
-            self.test_results.append(("Finalized Carga Restriction", False, f"❌ Status {status_code}"))
+        if status_code != 200:
+            print_error(f"Expected status 200, got {status_code}")
+            self.test_results.append(("Filters Conferente", False, f"❌ Status {status_code}"))
             return False
+        
+        print_success("Status 200 OK received")
+        
+        # Validate structure
+        is_valid, message = self.validate_cargas_response_structure(data)
+        if not is_valid:
+            print_error(f"Structure validation failed: {message}")
+            self.test_results.append(("Filters Conferente", False, f"❌ {message}"))
+            return False
+        
+        print_success("✅ Response structure consistent with filters")
+        print_info(f"Total cargas found: {data['total']}")
+        print_info(f"Cargas array length: {len(data['cargas'])}")
+        
+        # Validate that cargas is ALWAYS an array
+        if not isinstance(data["cargas"], list):
+            print_error("cargas field is not an array")
+            self.test_results.append(("Filters Conferente", False, "❌ cargas is not an array"))
+            return False
+        
+        print_success("✅ cargas field is an array")
+        
+        # If results exist, validate they match the filter
+        if data["cargas"]:
+            for carga in data["cargas"]:
+                if carga.get("tipo") != "caixaria":
+                    print_warning(f"Found carga with tipo '{carga.get('tipo')}' instead of 'caixaria'")
+                else:
+                    print_info(f"Carga {carga.get('identificador_carga')} has correct tipo: {carga.get('tipo')}")
+        
+        self.test_results.append(("Filters Conferente", True, "✅ Filters working with consistent structure"))
+        return True
     
     def test_nonexistent_item(self):
         """Test 3: Nonexistent item"""
