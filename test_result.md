@@ -542,3 +542,40 @@ agent_communication:
       The 404 bug has been completely resolved. The endpoint is working perfectly.
       Frontend URL duplication issue (${API}/api/cargas → /api/api/cargas) was fixed.
       Backend endpoint behavior is correct and robust.
+
+  - agent: "testing"
+    message: |
+      ===== TESTING AGENT REPORT: DELETE /api/cargas/:id/itens/:itemId ENDPOINT =====
+      ✅ COMPREHENSIVE DELETE TESTING COMPLETED - ALL TESTS PASSED (6/6)
+      
+      **Test Request:** Testar funcionalidade de exclusão de itens de carga com validações, logs DEBUG e tratamento de erros.
+      
+      **Test Results Summary:**
+      
+      **✅ SUCCESSFUL TESTS:**
+      1. ✅ Setup - Found editable carga (TEST20) and finalized carga for testing
+      2. ✅ Successful Deletion - Item deleted correctly (5→4 items), proper response structure
+      3. ✅ Finalized Carga Restriction - 400 Bad Request with correct error message
+      4. ✅ Nonexistent Item - 404 Not Found with correct error message  
+      5. ✅ Nonexistent Carga - 404 Not Found with correct error message
+      6. ✅ Integrity Validation - Array integrity maintained, data consistency verified
+      7. ✅ Debug Logs - Backend logs showing proper INFO/WARNING/ERROR messages
+      
+      **Key Functionality Verified:**
+      ✅ DELETE /api/cargas/{carga_id}/itens/{item_id} working correctly
+      ✅ HTTP status codes: 200 (success), 400 (finalized carga), 404 (not found)
+      ✅ Response structure: {ok, message, item_removido, total_itens_antes, total_itens_depois}
+      ✅ Data integrity: total_itens calculation and array updates correct
+      ✅ Error handling: Clear messages for all edge cases
+      ✅ Validation: Prevents deletion from finalized cargas
+      ✅ Logging: Proper DEBUG/INFO/WARNING/ERROR logs generated
+      
+      **Backend Logs Verified:**
+      - [DELETE] Item excluído com sucesso: carga=..., item=..., total: 5→4
+      - [DELETE] Tentativa de excluir item de carga finalizada: ...
+      - [DELETE] Item 9999 não encontrado na carga ...
+      - [DELETE] Carga carga-inexistente não encontrada
+      
+      **CONCLUSION:**
+      The DELETE endpoint is working perfectly with all validations, error handling, 
+      and logging implemented correctly. The bug fix has been successfully validated.
