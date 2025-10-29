@@ -170,6 +170,7 @@ export default function GerenciarCargas({ onVoltar }) {
                   <th>Data</th>
                   <th>Tipo</th>
                   <th>Status</th>
+                  <th>Conferente</th>
                   <th>Total Itens</th>
                   <th>Ações</th>
                 </tr>
@@ -192,7 +193,8 @@ export default function GerenciarCargas({ onVoltar }) {
                          carga.status === 'pausada' ? 'Pausada' : 'Pendente'}
                       </span>
                     </td>
-                    <td className="text-center font-semibold">{carga.itens.length}</td>
+                    <td className="text-sm">{carga.conferente_nome || carga.conferente_id || '-'}</td>
+                    <td className="text-center font-semibold">{carga.total_itens || carga.itens?.length || 0}</td>
                     <td className="text-center">
                       <button
                         onClick={() => handleVisualizarCarga(carga.id)}
