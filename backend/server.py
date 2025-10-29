@@ -91,7 +91,8 @@ class Sessao(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     carga_id: str
     conferente_id: str
-    recipiente: Optional[str] = None  # Para Multi-pedidos
+    recipiente: Optional[str] = None  # Recipiente ativo para Multi-pedidos
+    recipientes_finalizados: List[str] = []  # Lista de recipientes já finalizados
     inicio: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     pausas: List[Dict[str, str]] = []
     fim: Optional[str] = None
