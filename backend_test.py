@@ -295,28 +295,76 @@ class CargasEndpointTester:
         self.test_results.append(("Multiple Results", True, "✅ Multiple results with proper structure"))
         return True
     
-    def test_nonexistent_carga(self):
-        """Test 4: Nonexistent carga"""
-        print_header("TEST 4: Teste com carga inexistente")
+    def test_critical_validation(self):
+        """Test 5: Critical validation - response format consistency"""
+        print_header("TEST 5: Validação crítica")
         
-        print_info("Attempting to delete item from nonexistent carga")
-        status_code, response = self.make_delete_request("/cargas/carga-inexistente/itens/0")
+        print_info("Testing various scenarios to ensure ALWAYS consistent format")
         
-        if status_code == 404:
-            print_success("Status 404 Not Found received (correct)")
+        test_scenarios = [
+            ("Basic listing", {}),
+            ("Status filter", {"status": "finalizada"}),
+            ("Tipo filter", {"tipo": "multi"}),
+            ("Date range", {"dataInicio": "2024-01-01", "dataFim": "2024-12-31"}),
+            ("Pagination", {"page": 1, "pageSize": 5}),
+            ("Combined filters", {"status": "em_andamento", "tipo": "caixaria"}),
+            ("Non-existent status", {"status": "status_inexistente"}),
+        ]
+        
+        all_passed = True
+        
+        for scenario_name, params in test_scenarios:
+            print_info(f"Testing scenario: {scenario_name}")
+            status_code, data = self.make_request("/cargas", params)
             
-            if "detail" in response and "não encontrada" in response["detail"]:
-                print_success(f"Correct error message: {response['detail']}")
-                self.test_results.append(("Nonexistent Carga", True, "✅ Nonexistent carga handling working"))
-                return True
-            else:
-                print_error(f"Wrong error message: {response}")
-                self.test_results.append(("Nonexistent Carga", False, "❌ Wrong error message"))
-                return False
+            # CRITICAL: Must ALWAYS return 200 (never 404)
+            if status_code != 200:
+                print_error(f"Scenario '{scenario_name}': Expected 200, got {status_code}")
+                all_passed = False
+                continue
+            
+            # CRITICAL: Must ALWAYS have consistent structure
+            is_valid, message = self.validate_cargas_response_structure(data)
+            if not is_valid:
+                print_error(f"Scenario '{scenario_name}': {message}")
+                all_passed = False
+                continue
+            
+            # CRITICAL: cargas must ALWAYS be an array
+            if not isinstance(data["cargas"], list):
+                print_error(f"Scenario '{scenario_name}': cargas is not an array")
+                all_passed = False
+                continue
+            
+            # CRITICAL: Must NEVER return just array directly
+            if isinstance(data, list):
+                print_error(f"Scenario '{scenario_name}': Response is array directly (should be object)")
+                all_passed = False
+                continue
+            
+            # CRITICAL: cargas must NEVER be null or string
+            if data["cargas"] is None:
+                print_error(f"Scenario '{scenario_name}': cargas is null")
+                all_passed = False
+                continue
+            
+            if isinstance(data["cargas"], str):
+                print_error(f"Scenario '{scenario_name}': cargas is string")
+                all_passed = False
+                continue
+            
+            print_success(f"Scenario '{scenario_name}': ✅ Passed (total: {data['total']}, cargas: {len(data['cargas'])})")
+        
+        if all_passed:
+            print_success("✅ ALL scenarios maintain consistent format")
+            print_success("✅ NEVER returns 404 for empty results")
+            print_success("✅ ALWAYS returns {total, page, pageSize, cargas: []}")
+            print_success("✅ cargas is ALWAYS an array (never null/string)")
+            self.test_results.append(("Critical Validation", True, "✅ All critical validations passed"))
+            return True
         else:
-            print_error(f"Expected status 404, got {status_code}")
-            print_error(f"Response: {response}")
-            self.test_results.append(("Nonexistent Carga", False, f"❌ Status {status_code}"))
+            print_error("❌ Some scenarios failed critical validation")
+            self.test_results.append(("Critical Validation", False, "❌ Critical validation failed"))
             return False
     
     def test_integrity_validation(self):
