@@ -110,37 +110,22 @@ user_problem_statement: |
   URL was: /api/api/cargas instead of /api/cargas
 
 backend:
-  - task: "Fix resume paused load endpoint"
+  - task: "Fix GET /api/cargas endpoint routing"
     implemented: true
-    working: "needs_testing"
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: "needs_testing"
-        agent: "main"
-        comment: |
-          Added new endpoint GET /api/sessoes/{sessao_id} to fetch session by ID.
-          This endpoint is needed by the frontend to get updated session data after resuming.
-          Line 682-687 in server.py
-
-  - task: "Sobra tracking backend"
-    implemented: true
-    working: "needs_testing"
-    file: "backend/server.py"
-    stuck_count: 0
-    priority: "medium"
     needs_retesting: false
     status_history:
-      - working: "already_implemented"
+      - working: true
         agent: "main"
         comment: |
-          Backend sobra tracking was already fully implemented:
-          - registrar_sobra function (lines 772-799)
-          - Sobras stored in db.sobras collection
-          - GET /api/sobras/{sessao_id} endpoint exists (lines 807-810)
-          - Auto-increments quantity if same EAN scanned multiple times
+          Endpoint já estava correto (linha 640-728).
+          Implementado para SEMPRE retornar 200 OK com estrutura {total, page, pageSize, cargas}.
+          Nunca retorna 404 - retorna array vazio quando não há resultados.
+          Suporta filtros: status, tipo, dataInicio, dataFim, page, pageSize.
+          DEBUG logs adicionados para troubleshooting.
 
 frontend:
   - task: "Fix Continuar Conferência button"
