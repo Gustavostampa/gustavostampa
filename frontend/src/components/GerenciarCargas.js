@@ -159,7 +159,17 @@ export default function GerenciarCargas({ onVoltar }) {
       </header>
 
       <section className="border-2 border-black p-6 rounded-lg">
-        <h2 className="text-xl font-bold mb-4">Cargas ({cargas.length})</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold">
+            Cargas {total > 0 && `(${total})`}
+          </h2>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border-2 border-red-600 p-4 rounded-lg mb-4 text-red-800">
+            <p className="font-bold">{error}</p>
+          </div>
+        )}
 
         {loading ? (
           <div className="text-center py-12">
@@ -169,7 +179,7 @@ export default function GerenciarCargas({ onVoltar }) {
         ) : cargas.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <Search size={48} className="mx-auto mb-4 opacity-30" />
-            <p>Nenhuma carga encontrada</p>
+            <p className="font-bold">Nenhuma carga encontrada</p>
             <p className="text-sm mt-2">Verifique os filtros ou importe novas cargas</p>
           </div>
         ) : (
