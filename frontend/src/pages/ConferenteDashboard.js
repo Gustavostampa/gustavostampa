@@ -19,6 +19,7 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
   const [cargaParaIniciar, setCargaParaIniciar] = useState(null);
   const [recipienteSelecionado, setRecipienteSelecionado] = useState(null);
   const [sessaoPausada, setSessaoPausada] = useState(null);
+  const [ocultarFinalizadas, setOcultarFinalizadas] = useState(true);
   const syncIntervalRef = useRef(null);
 
   useEffect(() => {
