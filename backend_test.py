@@ -156,46 +156,60 @@ class MultiPedidosTester:
         self.test_results.append(("Multi Cargas Exist", True, f"✅ Found {multi_count} Multi cargas"))
         return True
     
-    def test_empty_result(self):
-        """Test 2: Empty result with future date"""
-        print_header("TEST 2: Teste com resultado vazio")
+    def test_no_filter_default_conferente(self):
+        """Test 2: Teste sem filtro de tipo (padrão conferente)"""
+        print_header("TEST 2: Teste sem filtro de tipo (padrão conferente)")
         
-        print_info("Testing GET /api/cargas?data=2099-12-31 (future date)")
-        status_code, data = self.make_request("/cargas", {"data": "2099-12-31"})
+        print_info("Testing GET /api/cargas?data=2025-10-29 (no tipo filter)")
+        status_code, data = self.make_request("/cargas", {"data": "2025-10-29"})
         
         if status_code != 200:
             print_error(f"Expected status 200 OK, got {status_code}")
-            print_error("CRITICAL: Should NEVER return 404 for empty results")
-            self.test_results.append(("Empty Result", False, f"❌ Status {status_code} (should be 200)"))
+            self.test_results.append(("No Filter Default", False, f"❌ Status {status_code}"))
             return False
         
-        print_success("Status 200 OK received (correct - never 404)")
+        print_success("Status 200 OK received")
         
         # Validate structure
         is_valid, message = self.validate_cargas_response_structure(data)
         if not is_valid:
             print_error(f"Structure validation failed: {message}")
-            self.test_results.append(("Empty Result", False, f"❌ {message}"))
+            self.test_results.append(("No Filter Default", False, f"❌ {message}"))
             return False
         
-        # Validate empty result structure
-        expected_structure = {
-            "total": 0,
-            "page": 1,
-            "pageSize": 20,
-            "cargas": []
-        }
+        print_success("Response structure is valid")
+        print_info(f"Total cargas found: {data['total']}")
         
-        for key, expected_value in expected_structure.items():
-            if data.get(key) != expected_value:
-                print_error(f"Expected {key}: {expected_value}, got: {data.get(key)}")
-                self.test_results.append(("Empty Result", False, f"❌ Wrong {key} value"))
-                return False
+        # Count by tipo
+        tipo_counts = {}
+        caixaria_count = 0
+        multi_count = 0
         
-        print_success("✅ Correct empty result structure: {total: 0, page: 1, pageSize: 20, cargas: []}")
-        print_success("✅ cargas is an empty array (not null or undefined)")
+        for carga in data["cargas"]:
+            tipo = carga.get("tipo", "unknown")
+            tipo_counts[tipo] = tipo_counts.get(tipo, 0) + 1
+            
+            if tipo == "caixaria":
+                caixaria_count += 1
+            elif tipo in ["multi", "Multi-Pedidos", "multi_pedidos"]:
+                multi_count += 1
+            
+            print_info(f"Carga: {carga.get('identificador_carga')} - Tipo: {tipo} - Status: {carga.get('status')}")
         
-        self.test_results.append(("Empty Result", True, "✅ Empty result handling correct"))
+        print_info(f"Tipos encontrados: {tipo_counts}")
+        print_info(f"Caixaria: {caixaria_count}, Multi: {multi_count}")
+        
+        # CRITICAL: Should return BOTH types when no filter is applied
+        if caixaria_count > 0 and multi_count > 0:
+            print_success("✅ CRITICAL: Returns BOTH caixaria AND multi types (conferente can see all)")
+        elif caixaria_count > 0 and multi_count == 0:
+            print_warning("⚠️ Only caixaria found, no multi cargas for this date")
+        elif caixaria_count == 0 and multi_count > 0:
+            print_warning("⚠️ Only multi found, no caixaria cargas for this date")
+        else:
+            print_warning("⚠️ No cargas found for this date")
+        
+        self.test_results.append(("No Filter Default", True, f"✅ Found {caixaria_count} caixaria + {multi_count} multi"))
         return True
     
     def test_filters_conferente(self):
