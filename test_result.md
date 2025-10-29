@@ -128,60 +128,36 @@ backend:
           DEBUG logs adicionados para troubleshooting.
 
 frontend:
-  - task: "Fix Continuar Conferência button"
+  - task: "Fix duplicated /api/ prefix in URLs"
     implemented: true
-    working: "needs_testing"
-    file: "frontend/src/pages/ConferenteDashboard.js"
+    working: true
+    file: "multiple files"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
-      - working: "needs_testing"
+      - working: true
         agent: "main"
         comment: |
-          Created new handleContinuarConferencia function (lines 138-169) that:
-          1. Fetches active/paused session for user
-          2. Calls /api/sessoes/{sessao_id}/retomar if paused
-          3. Fetches updated session data
-          4. Loads carga data
-          5. Sets states correctly
-          Previous implementation didn't call the retomar endpoint, causing the issue.
-
-  - task: "Sobra UI - Tab interface and display"
-    implemented: true
-    working: "needs_testing"
-    file: "frontend/src/components/ConferenciaScreen.js"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: true
-    status_history:
-      - working: "needs_testing"
-        agent: "main"
-        comment: |
-          Added complete Sobra UI:
-          1. New state: abaAtiva ('itens' or 'sobras'), sobras array
-          2. carregarSobras() function to fetch sobras from backend
-          3. Tab interface to switch between "Itens da Carga" and "Sobras"
-          4. Sobras table showing: EAN, Descrição, Quantidade, Última Leitura
-          5. For Multi-pedidos: also shows Recipiente column
-          6. Auto-reloads sobras after each EAN scan
-          7. Red background highlighting for sobra items
-
-  - task: "Multi-pedidos recipient display"
-    implemented: true
-    working: "needs_testing"
-    file: "frontend/src/components/ConferenciaScreen.js"
-    stuck_count: 0
-    priority: "low"
-    needs_retesting: true
-    status_history:
-      - working: "needs_testing"
-        agent: "main"
-        comment: |
-          Added recipient display in conference header (line 227-231):
-          - Shows blue badge with "Recipiente: {name}" for Multi-pedidos
-          - Only visible when tipo is 'multi' and recipiente exists in session
-          - Provides visual confirmation of active recipient during conferencing
+          PROBLEMA IDENTIFICADO:
+          - Alguns componentes chamavam ${API}/api/cargas
+          - Como API = ${BACKEND_URL}/api, resultava em /api/api/cargas (404)
+          
+          ARQUIVOS CORRIGIDOS:
+          1. frontend/src/pages/GestorDashboard.js (linha 38)
+             - Mudado de ${API}/api/cargas/${cargaId} para ${API}/cargas/${cargaId}
+          
+          2. frontend/src/components/VisualizarCarga.js (linha 23)
+             - Mudado de ${API}/api/cargas/... para ${API}/cargas/...
+          
+          3. frontend/src/components/GerenciarCargas.js (linhas 32, 35, 98)
+             - Mudado todas chamadas de ${API}/api/cargas para ${API}/cargas
+          
+          RESULTADO:
+          - URL correta: https://...emergentagent.com/api/cargas ✅
+          - Status 200 OK ✅
+          - 14 cargas carregadas corretamente ✅
+          - Tabela exibindo dados sem erro ✅
 
 metadata:
   created_by: "main_agent"
