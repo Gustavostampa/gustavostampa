@@ -594,6 +594,69 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
           onConfirmar={handleConfirmarReconferencia}
         />
       )}
+
+      {showModalTrocarRecipiente && (
+        <div className="modal-overlay" onClick={() => setShowModalTrocarRecipiente(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Selecionar Próximo Recipiente</h2>
+              <button onClick={() => setShowModalTrocarRecipiente(false)} className="p-2 hover:bg-gray-100 rounded">
+                <Package size={24} />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-sm text-gray-700 mb-4">
+                Selecione o próximo recipiente para continuar a conferência ou finalize a carga se todos os recipientes foram conferidos.
+              </p>
+
+              <div className="space-y-2">
+                {recipientesDisponiveis
+                  .filter(rec => !sessaoAtual.recipientes_finalizados?.includes(rec.recipiente))
+                  .map((rec) => (
+                    <button
+                      key={rec.recipiente}
+                      onClick={() => handleTrocarRecipiente(rec.recipiente)}
+                      className="w-full border-2 border-black p-4 rounded-lg hover:bg-gray-100 text-left transition-colors"
+                      data-testid={`btn-recipiente-${rec.recipiente}`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-bold text-lg">{rec.recipiente}</p>
+                          <p className="text-sm text-gray-600">
+                            {rec.total_itens} itens • {rec.progresso}% conferidos
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-green-700">{rec.itens_ok} OK</p>
+                          <p className="text-sm font-semibold text-red-700">{rec.itens_diferenca} Dif.</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                
+                {recipientesDisponiveis.every(rec => 
+                  sessaoAtual.recipientes_finalizados?.includes(rec.recipiente)
+                ) && (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="font-bold">Todos os recipientes foram finalizados!</p>
+                    <p className="text-sm mt-2">Você pode finalizar a carga agora.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setShowModalTrocarRecipiente(false)} 
+                className="btn-outline"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
