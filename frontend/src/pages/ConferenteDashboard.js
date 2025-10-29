@@ -272,6 +272,16 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
                   Última atualização: {formatarHora(ultimaAtualizacao)}
                 </span>
               )}
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <input
+                  type="checkbox"
+                  checked={ocultarFinalizadas}
+                  onChange={(e) => setOcultarFinalizadas(e.target.checked)}
+                  className="w-4 h-4"
+                  data-testid="checkbox-ocultar-finalizadas"
+                />
+                <span className="font-semibold">Ocultar finalizadas</span>
+              </label>
               <button
                 onClick={handleAtualizarCargas}
                 disabled={atualizando}
@@ -291,7 +301,9 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {cargas.map((carga) => {
+              {cargas
+                .filter(carga => !ocultarFinalizadas || carga.status !== 'finalizada')
+                .map((carga) => {
                 const totalItens = carga.itens.length;
                 const itensConferidos = carga.itens.filter(i => i.status !== 'pendente').length;
                 const progresso = totalItens > 0 ? (itensConferidos / totalItens * 100) : 0;
