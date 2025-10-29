@@ -1061,12 +1061,11 @@ async def migrar_eans_produtos():
             erros.append(f"EAN {produto['ean']} já existe em produto_eans")
             continue
         
-        # Criar registro
+        # Criar registro (SEM fator_conversao)
         produto_ean = ProdutoEAN(
             sku=produto["codigo_produto"],
             ean=ean_normalizado,
             tipo_unidade=produto.get("tipo_unidade", "UNI"),
-            fator_conversao=1,  # Padrão: 1 unidade
             descricao=produto.get("descricao"),
             ativo=produto.get("ativo", True)
         )
