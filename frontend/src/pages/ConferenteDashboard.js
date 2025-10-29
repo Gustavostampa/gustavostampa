@@ -324,11 +324,11 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {cargas
+              {(Array.isArray(cargas) ? cargas : [])
                 .filter(carga => !ocultarFinalizadas || carga.status !== 'finalizada')
                 .map((carga) => {
-                const totalItens = carga.itens.length;
-                const itensConferidos = carga.itens.filter(i => i.status !== 'pendente').length;
+                const totalItens = carga.itens?.length || 0;
+                const itensConferidos = (carga.itens || []).filter(i => i.status !== 'pendente').length;
                 const progresso = totalItens > 0 ? (itensConferidos / totalItens * 100) : 0;
 
                 return (
