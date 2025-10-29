@@ -27,49 +27,65 @@ export default function GerenciarCargas({ onVoltar }) {
       if (filtros.data) params.dataInicio = filtros.data;
       if (filtros.tipo) params.tipo = filtros.tipo;
       if (filtros.status) params.status = filtros.status;
-      
-      // Adicionar timestamp para evitar cache
-      params._t = Date.now();
 
-      console.log('[Frontend] Carregando cargas...');
-      console.log('[Frontend] Filtros:', filtros);
-      console.log('[Frontend] Params enviados:', params);
-      console.log('[Frontend] URL completa:', `${API}/api/cargas`);
+      console.log('[Frontend] === INICIANDO CHAMADA API ===');
+      console.log('[Frontend] URL:', `${API}/api/cargas`);
+      console.log('[Frontend] Params:', params);
       
       const response = await axios.get(`${API}/api/cargas`, { 
         params,
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
+        timeout: 10000
       });
       
-      console.log('[Frontend] Resposta recebida:', response.data);
-      console.log('[Frontend] Status:', response.status);
+      console.log('[Frontend] === RESPOSTA RECEBIDA ===');
+      console.log('[Frontend] Status HTTP:', response.status);
+      console.log('[Frontend] Data:', response.data);
       
-      // A resposta tem formato { total, page, pageSize, cargas }
-      if (response.data && response.data.cargas) {
-        console.log('[Frontend] Total:', response.data.total);
-        console.log('[Frontend] Cargas recebidas:', response.data.cargas.length);
-        setCargas(response.data.cargas);
-        setTotal(response.data.total);
+      // Validar estrutura da resposta
+      if (!response.data) {
+        throw new Error('Resposta vazia do servidor');
+      }
+      
+      // Verificar se tem a estrutura esperada
+      if (typeof response.data === 'object' && 'cargas' in response.data) {
+        const { total, cargas } = response.data;
+        console.log('[Frontend] Total:', total);
+        console.log('[Frontend] Cargas recebidas:', cargas.length);
+        setCargas(cargas || []);
+        setTotal(total || 0);
       } else if (Array.isArray(response.data)) {
-        console.warn('[Frontend] Formato array direto');
+        // Fallback: array direto
+        console.warn('[Frontend] Formato array direto (legacy)');
         setCargas(response.data);
         setTotal(response.data.length);
       } else {
-        console.error('[Frontend] Formato de resposta desconhecido:', response.data);
-        setError('Formato de resposta inesperado');
-        setCargas([]);
-        setTotal(0);
+        console.error('[Frontend] Formato inesperado:', response.data);
+        throw new Error('Formato de resposta inesperado');
       }
+      
     } catch (error) {
-      console.error('[Frontend] Erro ao carregar cargas:', error);
-      console.error('[Frontend] Error message:', error.message);
-      console.error('[Frontend] Response status:', error.response?.status);
-      console.error('[Frontend] Response data:', error.response?.data);
-      console.error('[Frontend] Request URL:', error.config?.url);
-      setError(`Falha ao carregar as cargas. ${error.response?.status === 404 ? 'Endpoint não encontrado (404)' : error.message}`);
+      console.error('[Frontend] === ERRO ===');
+      console.error('[Frontend] Tipo:', error.name);
+      console.error('[Frontend] Mensagem:', error.message);
+      console.error('[Frontend] Status HTTP:', error.response?.status);
+      console.error('[Frontend] Dados do erro:', error.response?.data);
+      console.error('[Frontend] URL tentada:', error.config?.url);
+      
+      // Mensagem específica por tipo de erro
+      let mensagemErro = 'Falha ao carregar as cargas. ';
+      if (error.response?.status === 404) {
+        mensagemErro += 'Endpoint não encontrado (404). Verifique a configuração do servidor.';
+      } else if (error.response?.status === 500) {
+        mensagemErro += 'Erro interno do servidor (500).';
+      } else if (error.code === 'ECONNABORTED') {
+        mensagemErro += 'Timeout - servidor demorou muito para responder.';
+      } else if (!error.response) {
+        mensagemErro += 'Não foi possível conectar ao servidor.';
+      } else {
+        mensagemErro += error.message;
+      }
+      
+      setError(mensagemErro);
       setCargas([]);
       setTotal(0);
     } finally {
