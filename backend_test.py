@@ -369,25 +369,7 @@ class CargasEndpointTester:
     
     # Removed integrity validation test as it was for DELETE endpoint
     
-    def test_debug_logs(self):
-        """Test 6: Check for DEBUG logs in backend"""
-        print_header("TEST 6: Verificar logs DEBUG")
-        
-        print_info("Checking backend logs for DEBUG messages...")
-        print_info("Expected log patterns:")
-        print_info("- [DELETE /api/cargas/...] Iniciando exclusão")
-        print_info("- [DELETE] Carga encontrada: status=..., total_itens=...")
-        print_info("- [DELETE] Item removido: index=..., codigo=...")
-        print_info("- [DELETE] Atualização MongoDB: matched=..., modified=...")
-        print_info("- [DELETE] Item excluído com sucesso")
-        
-        # Note: In a real environment, we would check actual log files
-        # For this test, we'll assume logs are working if the API responses are correct
-        print_warning("Log verification requires manual inspection of backend console")
-        print_info("Please check the backend logs for the DEBUG messages listed above")
-        
-        self.test_results.append(("Debug Logs", True, "⚠️ Manual verification required"))
-        return True
+    # Removed debug logs test as it was specific to DELETE endpoint
     
     def run_all_tests(self):
         """Run all tests"""
