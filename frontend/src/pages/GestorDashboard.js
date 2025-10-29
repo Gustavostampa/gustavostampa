@@ -35,7 +35,7 @@ export default function GestorDashboard({ usuario, onLogout }) {
 
   const handleVisualizarCarga = async (cargaId) => {
     try {
-      const response = await axios.get(`${API}/api/cargas/${cargaId}`);
+      const response = await axios.get(`${API}/cargas/${cargaId}`);
       setCargaSelecionada(response.data);
       setShowVisualizarCarga(true);
     } catch (error) {
