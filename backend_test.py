@@ -110,37 +110,51 @@ class CargasEndpointTester:
             
         return True, "Structure is valid"
     
-    def setup_test_data(self):
-        """Setup: Get editable carga for testing"""
-        print_header("SETUP: Obter carga editável")
+    def test_structured_response(self):
+        """Test 1: Basic structured response validation"""
+        print_header("TEST 1: Teste de resposta estruturada")
         
-        # Get cargas with status 'aberta' or 'pausada' that have items
-        status_code, data = self.make_request("/cargas", {"status": "aberta,pausada"})
+        print_info("Testing GET /api/cargas without filters")
+        status_code, data = self.make_request("/cargas")
         
-        if status_code == 200 and data.get('cargas'):
-            for carga in data['cargas']:
-                if carga.get('itens') and len(carga['itens']) > 0:
-                    self.test_carga_id = carga['id']
-                    print_success(f"Found editable carga: {carga.get('identificador_carga')} (ID: {self.test_carga_id})")
-                    print_info(f"Status: {carga.get('status')}, Total items: {len(carga['itens'])}")
-                    print_info(f"First item: {carga['itens'][0].get('codigo_produto')} - {carga['itens'][0].get('descricao')}")
-                    break
-        
-        # Get a finalized carga for testing restrictions
-        status_code, data = self.make_request("/cargas", {"status": "finalizada"})
-        if status_code == 200 and data.get('cargas'):
-            for carga in data['cargas']:
-                if carga.get('itens') and len(carga['itens']) > 0:
-                    self.test_carga_finalizada_id = carga['id']
-                    print_success(f"Found finalized carga: {carga.get('identificador_carga')} (ID: {self.test_carga_finalizada_id})")
-                    break
-        
-        if not self.test_carga_id:
-            print_error("No editable carga found with items")
-            self.test_results.append(("Setup", False, "❌ No editable carga available"))
+        if status_code != 200:
+            print_error(f"Expected status 200, got {status_code}")
+            self.test_results.append(("Structured Response", False, f"❌ Status {status_code}"))
             return False
         
-        self.test_results.append(("Setup", True, "✅ Test data prepared"))
+        print_success("Status 200 OK received")
+        
+        # Validate structure
+        is_valid, message = self.validate_cargas_response_structure(data)
+        if not is_valid:
+            print_error(f"Structure validation failed: {message}")
+            self.test_results.append(("Structured Response", False, f"❌ {message}"))
+            return False
+        
+        print_success("Response structure is valid: {total, page, pageSize, cargas}")
+        print_info(f"Total cargas: {data['total']}")
+        print_info(f"Page: {data['page']}, PageSize: {data['pageSize']}")
+        print_info(f"Cargas array length: {len(data['cargas'])}")
+        
+        # Validate that cargas is ALWAYS an array
+        if not isinstance(data["cargas"], list):
+            print_error("cargas field is not an array")
+            self.test_results.append(("Structured Response", False, "❌ cargas is not an array"))
+            return False
+        
+        print_success("✅ cargas field is an array")
+        
+        # Check individual carga structure if any exist
+        if data["cargas"]:
+            carga = data["cargas"][0]
+            required_carga_fields = ["id", "identificador_carga", "tipo", "status", "data"]
+            for field in required_carga_fields:
+                if field not in carga:
+                    print_warning(f"Carga missing field: {field}")
+                else:
+                    print_info(f"Carga has field: {field} = {carga[field]}")
+        
+        self.test_results.append(("Structured Response", True, "✅ Structure validation passed"))
         return True
     
     def test_successful_deletion(self):
