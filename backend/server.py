@@ -849,6 +849,69 @@ async def finalizar_sessao(sessao_id: str):
     
     return {"message": "Sessão finalizada"}
 
+@api_router.post("/sessoes/{sessao_id}/finalizar-recipiente")
+async def finalizar_recipiente(sessao_id: str):
+    """
+    Finaliza o recipiente atual em uma sessão Multi-pedidos.
+    Adiciona o recipiente à lista de finalizados e permite selecionar próximo.
+    """
+    sessao = await db.sessoes.find_one({"id": sessao_id})
+    if not sessao:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    
+    recipiente_atual = sessao.get("recipiente")
+    if not recipiente_atual:
+        raise HTTPException(status_code=400, detail="Nenhum recipiente ativo nesta sessão")
+    
+    # Adicionar à lista de finalizados
+    recipientes_finalizados = sessao.get("recipientes_finalizados", [])
+    if recipiente_atual not in recipientes_finalizados:
+        recipientes_finalizados.append(recipiente_atual)
+    
+    # Atualizar sessão
+    await db.sessoes.update_one(
+        {"id": sessao_id},
+        {"$set": {
+            "recipientes_finalizados": recipientes_finalizados,
+            "recipiente": None  # Limpar recipiente atual
+        }}
+    )
+    
+    return {
+        "message": f"Recipiente '{recipiente_atual}' finalizado",
+        "recipiente_finalizado": recipiente_atual,
+        "total_finalizados": len(recipientes_finalizados)
+    }
+
+@api_router.post("/sessoes/{sessao_id}/trocar-recipiente")
+async def trocar_recipiente(sessao_id: str, novo_recipiente: str):
+    """
+    Troca o recipiente ativo em uma sessão Multi-pedidos.
+    Valida se o recipiente não foi finalizado.
+    """
+    sessao = await db.sessoes.find_one({"id": sessao_id})
+    if not sessao:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    
+    # Verificar se já foi finalizado
+    recipientes_finalizados = sessao.get("recipientes_finalizados", [])
+    if novo_recipiente in recipientes_finalizados:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Recipiente '{novo_recipiente}' já foi finalizado"
+        )
+    
+    # Atualizar recipiente ativo
+    await db.sessoes.update_one(
+        {"id": sessao_id},
+        {"$set": {"recipiente": novo_recipiente}}
+    )
+    
+    return {
+        "message": f"Recipiente alterado para '{novo_recipiente}'",
+        "recipiente_ativo": novo_recipiente
+    }
+
 @api_router.get("/sessoes/ativa/{conferente_id}", response_model=Optional[Sessao])
 async def obter_sessao_ativa(conferente_id: str):
     sessao = await db.sessoes.find_one(
