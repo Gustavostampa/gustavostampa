@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for WMS Scanner - GET /api/cargas endpoint
-Testing the fixed endpoint that was causing 404 errors.
+Backend API Testing for WMS Scanner - DELETE /api/cargas/:id/itens/:itemId endpoint
+Testing the item deletion functionality with validations, logs and error handling.
 """
 
 import requests
 import json
 import sys
+import time
 from datetime import datetime, timedelta
 
 # Configuration
