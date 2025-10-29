@@ -21,7 +21,7 @@ export default function GestorDashboard({ usuario, onLogout }) {
   const [sessoesFinalizadas, setSessoesFinalizadas] = useState([]);
 
   useEffect(() => {
-    if (!showProdutos) {
+    if (!showProdutos && !showVisualizarCarga) {
       if (abaAtiva === 'tempo-real') {
         carregarStats();
       } else {
@@ -29,7 +29,29 @@ export default function GestorDashboard({ usuario, onLogout }) {
       }
       carregarUsuarios();
     }
-  }, [filtros, showProdutos, abaAtiva]);
+  }, [filtros, showProdutos, showVisualizarCarga, abaAtiva]);
+
+  const handleVisualizarCarga = async (cargaId) => {
+    try {
+      const response = await axios.get(`${API}/api/cargas/${cargaId}`);
+      setCargaSelecionada(response.data);
+      setShowVisualizarCarga(true);
+    } catch (error) {
+      console.error('Erro ao carregar carga:', error);
+      alert('Erro ao carregar detalhes da carga');
+    }
+  };
+
+  const handleVoltarVisualizacao = () => {
+    setShowVisualizarCarga(false);
+    setCargaSelecionada(null);
+    // Recarregar stats
+    if (abaAtiva === 'tempo-real') {
+      carregarStats();
+    } else {
+      carregarSessoesFinalizadas();
+    }
+  };
 
   const carregarStats = async () => {
     try {
