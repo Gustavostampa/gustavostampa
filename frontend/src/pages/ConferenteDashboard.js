@@ -83,11 +83,15 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
   const carregarCargas = async (silent = false) => {
     if (!silent) setAtualizando(true);
     try {
-      console.log('[ConferenteDashboard] Carregando cargas:', { data: dataSelecionada, tipo: tipoSelecionado });
+      console.log('[ConferenteDashboard] Carregando cargas:', { data: dataSelecionada, tipo: tipoSelecionado || 'todos' });
       
-      const response = await axios.get(`${API}/cargas`, {
-        params: { data: dataSelecionada, tipo: tipoSelecionado }
-      });
+      // Construir params apenas com valores não vazios
+      const params = { data: dataSelecionada };
+      if (tipoSelecionado) {
+        params.tipo = tipoSelecionado;
+      }
+      
+      const response = await axios.get(`${API}/cargas`, { params });
       
       console.log('[ConferenteDashboard] Resposta da API:', response.data);
       
