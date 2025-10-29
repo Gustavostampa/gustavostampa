@@ -693,11 +693,11 @@ agent_communication:
       Frontend ConferenceDashboard will no longer encounter "cargas.filter is not a function" errors.
       The API now guarantees consistent response format in ALL scenarios.
 
-  - task: "Test Multi-pedidos listing functionality for conferente"
+  - task: "Investigate Multi-pedidos date filtering issue for conferente panel"
     implemented: true
-    working: true
-    file: "backend/server.py"
-    stuck_count: 0
+    working: false
+    file: "backend/server.py, frontend/src/pages/ConferenteDashboard.js"
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -772,6 +772,60 @@ agent_communication:
           The Multi-pedidos listing functionality bug has been completely resolved.
           Conferente can now see Multi-pedidos cargas in their panel when no type filter is applied.
           All filtering scenarios work correctly and maintain consistent API responses.
+      - working: false
+        agent: "testing"
+        comment: |
+          ❌ **CRITICAL ISSUE DISCOVERED: Multi-pedidos Date/Status Filtering Problem**
+          
+          **Investigation Request:** Investigar datas das cargas Multi-pedidos para entender por que não aparecem no painel do conferente
+          
+          **ROOT CAUSE IDENTIFIED:**
+          The user report is CORRECT - Multi-pedidos cargas are NOT appearing in the conferente panel, but NOT due to date issues.
+          The problem is STATUS FILTERING, not date filtering.
+          
+          **🔍 COMPREHENSIVE DATE INVESTIGATION RESULTS:**
+          
+          **1. ✅ Multi Cargas Exist with Correct Dates**
+          - Total Multi cargas in system: 5
+          - Dates found: 2025-10-28 (3 cargas), 2025-10-29 (2 cargas)
+          - Date formats: All correct (YYYY-MM-DD)
+          - Multi cargas for today (2025-10-29): 2 cargas ✅
+          
+          **2. ✅ Backend API Working Correctly**
+          - GET /api/cargas?data=2025-10-29 returns 3 cargas (1 caixaria + 2 multi) ✅
+          - GET /api/cargas?tipo=multi returns 5 multi cargas ✅
+          - All API responses have correct structure ✅
+          
+          **3. ❌ CRITICAL PROBLEM: All Multi Cargas Are Finalized**
+          - Multi cargas status breakdown: {'finalizada': 5} ❌
+          - Editable Multi cargas (aberta, pausada, em_andamento): 0 ❌
+          - Today's Multi cargas: MULTI-TEST10 (finalizada), MULTI-TEST20 (finalizada) ❌
+          
+          **4. ❌ FRONTEND FILTER REMOVES ALL Multi Cargas**
+          - ConferenteDashboard.js line 33: ocultarFinalizadas = true (default)
+          - ConferenteDashboard.js line 344: .filter(carga => carga.status !== 'finalizada')
+          - Result: ALL Multi cargas get filtered out because they're all 'finalizada' ❌
+          
+          **🎯 EXACT CONFERENTE DASHBOARD SIMULATION:**
+          - API call: GET /api/cargas?data=2025-10-29 → Returns 3 cargas (2 multi + 1 caixaria)
+          - Frontend filter: Remove finalizadas → 0 cargas remain
+          - Conferente sees: 0 Multi cargas ❌
+          
+          **💡 SOLUTION REQUIRED:**
+          Create Multi-pedidos cargas with non-finalized status:
+          - Status: 'aberta', 'pausada', or 'em_andamento'
+          - These will be visible to conferente after filtering
+          
+          **📊 TECHNICAL DETAILS:**
+          - Date filtering: Working correctly ✅
+          - Type filtering: Working correctly ✅  
+          - Status filtering: Working correctly but hiding all Multi cargas ❌
+          - Frontend logic: Working as designed but no data passes filter ❌
+          
+          **CONCLUSION:**
+          The Multi-pedidos cargas exist and have correct dates, but they are ALL in 'finalizada' status.
+          The conferente dashboard correctly filters out finalized cargas, resulting in 0 visible Multi cargas.
+          This is NOT a bug in the filtering logic - it's a data issue (no active Multi cargas exist).
 
 frontend:
 
