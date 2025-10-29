@@ -87,6 +87,29 @@ class CargaItemDeletionTester:
             print_error(f"Request failed: {e}")
             return None, {"error": str(e)}
     
+    def make_delete_request(self, endpoint):
+        """Make DELETE request to API endpoint"""
+        try:
+            url = f"{BACKEND_URL}{endpoint}"
+            print_info(f"Testing: DELETE {url}")
+            
+            response = self.session.delete(url)
+            
+            print_info(f"Status Code: {response.status_code}")
+            
+            if response.headers.get('content-type', '').startswith('application/json'):
+                try:
+                    data = response.json()
+                    return response.status_code, data
+                except json.JSONDecodeError:
+                    return response.status_code, {"error": "Invalid JSON response"}
+            else:
+                return response.status_code, {"error": "Non-JSON response", "content": response.text[:200]}
+                
+        except requests.exceptions.RequestException as e:
+            print_error(f"Request failed: {e}")
+            return None, {"error": str(e)}
+    
     def validate_cargas_response_structure(self, data):
         """Validate the expected structure of cargas response"""
         required_fields = ["total", "page", "pageSize", "cargas"]
