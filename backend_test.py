@@ -157,75 +157,47 @@ class CargasEndpointTester:
         self.test_results.append(("Structured Response", True, "✅ Structure validation passed"))
         return True
     
-    def test_successful_deletion(self):
-        """Test 1: Successful item deletion"""
-        print_header("TEST 1: Teste de exclusão bem-sucedida")
+    def test_empty_result(self):
+        """Test 2: Empty result with future date"""
+        print_header("TEST 2: Teste com resultado vazio")
         
-        if not self.test_carga_id:
-            print_error("No test carga available")
-            self.test_results.append(("Successful Deletion", False, "❌ No test data"))
-            return False
+        print_info("Testing GET /api/cargas?data=2099-12-31 (future date)")
+        status_code, data = self.make_request("/cargas", {"data": "2099-12-31"})
         
-        # Get current carga state
-        status_code, carga_before = self.make_request(f"/cargas/{self.test_carga_id}")
         if status_code != 200:
-            print_error(f"Failed to get carga before deletion: {status_code}")
-            self.test_results.append(("Successful Deletion", False, "❌ Could not get carga"))
+            print_error(f"Expected status 200 OK, got {status_code}")
+            print_error("CRITICAL: Should NEVER return 404 for empty results")
+            self.test_results.append(("Empty Result", False, f"❌ Status {status_code} (should be 200)"))
             return False
         
-        total_before = len(carga_before.get('itens', []))
-        print_info(f"Total items before deletion: {total_before}")
+        print_success("Status 200 OK received (correct - never 404)")
         
-        if total_before == 0:
-            print_error("No items to delete")
-            self.test_results.append(("Successful Deletion", False, "❌ No items available"))
+        # Validate structure
+        is_valid, message = self.validate_cargas_response_structure(data)
+        if not is_valid:
+            print_error(f"Structure validation failed: {message}")
+            self.test_results.append(("Empty Result", False, f"❌ {message}"))
             return False
         
-        # Delete first item (index 0)
-        print_info(f"Deleting first item (index 0) from carga {self.test_carga_id}")
-        status_code, response = self.make_delete_request(f"/cargas/{self.test_carga_id}/itens/0")
+        # Validate empty result structure
+        expected_structure = {
+            "total": 0,
+            "page": 1,
+            "pageSize": 20,
+            "cargas": []
+        }
         
-        if status_code == 200:
-            print_success("Status 200 OK received")
-            
-            # Validate response structure
-            required_fields = ["ok", "message", "item_removido", "total_itens_antes", "total_itens_depois"]
-            for field in required_fields:
-                if field not in response:
-                    print_error(f"Missing field in response: {field}")
-                    self.test_results.append(("Successful Deletion", False, f"❌ Missing field: {field}"))
-                    return False
-            
-            # Validate totals
-            if response["total_itens_depois"] != response["total_itens_antes"] - 1:
-                print_error(f"Total items calculation wrong: {response['total_itens_antes']} -> {response['total_itens_depois']}")
-                self.test_results.append(("Successful Deletion", False, "❌ Wrong total calculation"))
+        for key, expected_value in expected_structure.items():
+            if data.get(key) != expected_value:
+                print_error(f"Expected {key}: {expected_value}, got: {data.get(key)}")
+                self.test_results.append(("Empty Result", False, f"❌ Wrong {key} value"))
                 return False
-            
-            print_success(f"Item removed: {response['item_removido'].get('codigo_produto')} - {response['item_removido'].get('descricao')}")
-            print_success(f"Total items: {response['total_itens_antes']} -> {response['total_itens_depois']}")
-            
-            # Verify carga was updated
-            status_code, carga_after = self.make_request(f"/cargas/{self.test_carga_id}")
-            if status_code == 200:
-                total_after = len(carga_after.get('itens', []))
-                if total_after == total_before - 1:
-                    print_success(f"Carga updated correctly: {total_before} -> {total_after} items")
-                    self.test_results.append(("Successful Deletion", True, "✅ Item deleted successfully"))
-                    return True
-                else:
-                    print_error(f"Carga not updated correctly: expected {total_before - 1}, got {total_after}")
-                    self.test_results.append(("Successful Deletion", False, "❌ Carga not updated"))
-                    return False
-            else:
-                print_error("Could not verify carga after deletion")
-                self.test_results.append(("Successful Deletion", False, "❌ Could not verify update"))
-                return False
-        else:
-            print_error(f"Expected status 200, got {status_code}")
-            print_error(f"Response: {response}")
-            self.test_results.append(("Successful Deletion", False, f"❌ Status {status_code}"))
-            return False
+        
+        print_success("✅ Correct empty result structure: {total: 0, page: 1, pageSize: 20, cargas: []}")
+        print_success("✅ cargas is an empty array (not null or undefined)")
+        
+        self.test_results.append(("Empty Result", True, "✅ Empty result handling correct"))
+        return True
     
     def test_finalized_carga_restriction(self):
         """Test 2: Restriction on finalized carga"""
