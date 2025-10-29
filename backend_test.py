@@ -45,8 +45,6 @@ class CargasEndpointTester:
         self.session = requests.Session()
         self.auth_token = None
         self.test_results = []
-        self.test_carga_id = None
-        self.test_carga_finalizada_id = None
         
     def authenticate(self):
         """Authenticate with admin credentials if needed"""
