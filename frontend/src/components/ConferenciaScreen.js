@@ -310,6 +310,16 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
                 Retomar
               </button>
             )}
+            {cargaAtual.tipo === 'multi' && sessaoAtual.recipiente && (
+              <button 
+                onClick={handleFinalizarRecipiente} 
+                className="btn-secondary flex items-center gap-2" 
+                data-testid="btn-finalizar-recipiente"
+              >
+                <Package size={20} />
+                Finalizar Recipiente
+              </button>
+            )}
             <button onClick={handleFinalizar} disabled={!podeFinalizar} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" data-testid="btn-finalizar">
               <Check size={20} />
               Finalizar
