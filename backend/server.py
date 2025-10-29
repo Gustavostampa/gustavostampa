@@ -912,54 +912,104 @@ async def atualizar_item_carga(carga_id: str, item_index: int, update: ItemUpdat
 async def excluir_item_carga(carga_id: str, item_id: str):
     """
     Exclui um item específico de uma carga.
-    Apenas permitido para cargas com status 'pendente', 'em_andamento' ou 'pausada'.
+    Apenas permitido para cargas com status 'pendente', 'aberta', 'em_andamento' ou 'pausada'.
     Cargas finalizadas não podem ser alteradas.
+    
+    item_id pode ser:
+    - Índice do item no array (0, 1, 2, ...)
+    - Código do produto
     """
-    # Buscar carga
-    carga = await db.cargas.find_one({"id": carga_id}, {"_id": 0})
-    if not carga:
-        raise HTTPException(status_code=404, detail="Carga não encontrada")
+    import logging
+    logger = logging.getLogger(__name__)
     
-    # Bloquear se carga finalizada
-    if carga["status"] == "finalizada":
-        raise HTTPException(
-            status_code=400, 
-            detail="Não é possível excluir itens de uma carga finalizada"
-        )
-    
-    # Procurar item pelo ID (assumindo que item_id é o índice ou código_produto)
-    item_index = None
-    for idx, item in enumerate(carga["itens"]):
-        # Comparar por índice convertido para string ou por código_produto
-        if str(idx) == item_id or item.get("codigo_produto") == item_id:
-            item_index = idx
-            break
-    
-    if item_index is None:
-        raise HTTPException(status_code=404, detail="Item não encontrado na carga")
-    
-    # Remover item do array
-    item_removido = carga["itens"].pop(item_index)
-    
-    # Atualizar no banco
-    await db.cargas.update_one(
-        {"id": carga_id},
-        {
-            "$set": {
-                "itens": carga["itens"],
-                "updated_at": datetime.now(timezone.utc).isoformat()
+    try:
+        logger.debug(f"[DELETE /api/cargas/{carga_id}/itens/{item_id}] Iniciando exclusão")
+        
+        # Buscar carga
+        carga = await db.cargas.find_one({"id": carga_id}, {"_id": 0})
+        if not carga:
+            logger.error(f"[DELETE] Carga {carga_id} não encontrada")
+            raise HTTPException(status_code=404, detail="Carga não encontrada")
+        
+        logger.debug(f"[DELETE] Carga encontrada: {carga_id}, status={carga.get('status')}, total_itens={len(carga.get('itens', []))}")
+        
+        # Bloquear se carga finalizada
+        if carga["status"] == "finalizada":
+            logger.warning(f"[DELETE] Tentativa de excluir item de carga finalizada: {carga_id}")
+            raise HTTPException(
+                status_code=400, 
+                detail="Não é possível excluir itens de uma carga finalizada"
+            )
+        
+        # Permitir apenas para status editáveis
+        if carga["status"] not in ["pendente", "aberta", "em_andamento", "pausada"]:
+            logger.warning(f"[DELETE] Status inválido para exclusão: {carga['status']}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Não é possível excluir itens com status '{carga['status']}'"
+            )
+        
+        # Procurar item pelo ID (assumindo que item_id é o índice ou código_produto)
+        item_index = None
+        itens = carga.get("itens", [])
+        total_antes = len(itens)
+        
+        for idx, item in enumerate(itens):
+            # Comparar por índice convertido para string ou por código_produto
+            if str(idx) == item_id or item.get("codigo_produto") == item_id:
+                item_index = idx
+                break
+        
+        if item_index is None:
+            logger.error(f"[DELETE] Item {item_id} não encontrado na carga {carga_id}")
+            raise HTTPException(status_code=404, detail="Item não encontrado na carga")
+        
+        # Remover item do array
+        item_removido = itens.pop(item_index)
+        total_depois = len(itens)
+        
+        logger.debug(f"[DELETE] Item removido: index={item_index}, codigo={item_removido.get('codigo_produto')}, total_antes={total_antes}, total_depois={total_depois}")
+        
+        # Atualizar no banco
+        result = await db.cargas.update_one(
+            {"id": carga_id},
+            {
+                "$set": {
+                    "itens": itens,
+                    "total_itens": total_depois,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
             }
+        )
+        
+        logger.debug(f"[DELETE] Atualização MongoDB: matched={result.matched_count}, modified={result.modified_count}")
+        
+        if result.matched_count == 0:
+            logger.error(f"[DELETE] Falha ao atualizar carga {carga_id}")
+            raise HTTPException(status_code=500, detail="Falha ao atualizar carga")
+        
+        logger.info(f"[DELETE] Item excluído com sucesso: carga={carga_id}, item={item_id}, total: {total_antes}→{total_depois}")
+        
+        return {
+            "ok": True,
+            "message": "Item excluído com sucesso",
+            "item_removido": {
+                "index": item_index,
+                "codigo_produto": item_removido.get("codigo_produto"),
+                "descricao": item_removido.get("descricao")
+            },
+            "total_itens_antes": total_antes,
+            "total_itens_depois": total_depois
         }
-    )
-    
-    return {
-        "ok": True,
-        "message": "Item excluído com sucesso",
-        "item_removido": {
-            "codigo_produto": item_removido.get("codigo_produto"),
-            "descricao": item_removido.get("descricao")
-        }
-    }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[DELETE /api/cargas/{carga_id}/itens/{item_id}] Erro interno: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={"erro": "internal_error", "detalhe": str(e)}
+        )
 
 # Sessões
 @api_router.post("/sessoes", response_model=Sessao)
