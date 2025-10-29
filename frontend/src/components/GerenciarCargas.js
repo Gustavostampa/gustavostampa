@@ -20,30 +20,39 @@ export default function GerenciarCargas({ onVoltar }) {
   const carregarCargas = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
+      // Construir params apenas com valores não vazios
       const params = {};
-      if (filtros.data) params.data = filtros.data;
+      if (filtros.data) params.dataInicio = filtros.data;
       if (filtros.tipo) params.tipo = filtros.tipo;
       if (filtros.status) params.status = filtros.status;
 
-      console.log('Carregando cargas com params:', params);
-      console.log('API URL:', `${API}/api/cargas`);
+      console.log('[Frontend] Carregando cargas...');
+      console.log('[Frontend] Filtros:', filtros);
+      console.log('[Frontend] Params enviados:', params);
+      console.log('[Frontend] URL:', `${API}/api/cargas`);
       
       const response = await axios.get(`${API}/api/cargas`, { params });
-      console.log('Resposta completa:', response.data);
+      console.log('[Frontend] Resposta recebida:', response.data);
       
-      // A resposta agora tem formato { total, cargas }
+      // A resposta tem formato { total, page, pageSize, cargas }
       if (response.data.cargas) {
-        console.log('Cargas recebidas:', response.data.cargas.length);
+        console.log('[Frontend] Total:', response.data.total);
+        console.log('[Frontend] Cargas recebidas:', response.data.cargas.length);
         setCargas(response.data.cargas);
+        setTotal(response.data.total);
       } else {
-        // Fallback para formato antigo (array direto)
-        console.log('Cargas recebidas (formato antigo):', response.data.length);
+        console.warn('[Frontend] Formato inesperado, usando array direto');
         setCargas(response.data);
+        setTotal(response.data.length);
       }
     } catch (error) {
-      console.error('Erro ao carregar cargas:', error);
-      console.error('Detalhes do erro:', error.response?.data);
-      alert('Falha ao carregar as cargas. Tente novamente.');
+      console.error('[Frontend] Erro ao carregar cargas:', error);
+      console.error('[Frontend] Detalhes:', error.response?.data);
+      setError('Falha ao carregar as cargas. Tente novamente.');
+      setCargas([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
