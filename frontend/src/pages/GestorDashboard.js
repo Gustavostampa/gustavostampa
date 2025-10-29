@@ -315,12 +315,13 @@ export default function GestorDashboard({ usuario, onLogout }) {
                   <th>Total</th>
                   <th>Conferente</th>
                   <th>Tempo (min)</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {stats.length === 0 ? (
                   <tr>
-                    <td colSpan="10" className="text-center py-8 text-gray-500">
+                    <td colSpan="11" className="text-center py-8 text-gray-500">
                       Nenhuma carga encontrada
                     </td>
                   </tr>
@@ -357,6 +358,16 @@ export default function GestorDashboard({ usuario, onLogout }) {
                       <td className="text-center font-semibold">{stat.total_itens}</td>
                       <td>{stat.conferente}</td>
                       <td className="text-center">{stat.tempo_minutos || '-'}</td>
+                      <td className="text-center">
+                        <button
+                          onClick={() => handleVisualizarCarga(stat.carga_id)}
+                          className="btn-outline flex items-center gap-2 text-sm mx-auto"
+                          data-testid={`btn-visualizar-${idx}`}
+                        >
+                          <Eye size={16} />
+                          Ver Itens
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
