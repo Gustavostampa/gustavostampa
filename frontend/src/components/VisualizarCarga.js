@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ArrowLeft, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-
-const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+import { API } from '../App';
 
 export default function VisualizarCarga({ carga, onVoltar }) {
   const [cargaAtual, setCargaAtual] = useState(carga);
