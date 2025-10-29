@@ -10,6 +10,8 @@ export default function GerenciarCargas({ onVoltar }) {
   const [cargaSelecionada, setCargaSelecionada] = useState(null);
   const [showVisualizarCarga, setShowVisualizarCarga] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     carregarCargas();
