@@ -373,28 +373,23 @@ class CargasEndpointTester:
     
     def run_all_tests(self):
         """Run all tests"""
-        print_header("WMS SCANNER - DELETE /api/cargas/:id/itens/:itemId ENDPOINT TESTING")
+        print_header("WMS SCANNER - GET /api/cargas ENDPOINT TESTING")
         print_info(f"Backend URL: {BACKEND_URL}")
-        print_info("Testing item deletion functionality with validations, logs and error handling")
+        print_info("Testing cargas listing endpoint for consistent format validation")
+        print_info("Validating that API always returns {total, page, pageSize, cargas} structure")
         
         # Authenticate
         if not self.authenticate():
             print_error("Authentication failed, stopping tests")
             return False
         
-        # Setup test data first
-        if not self.setup_test_data():
-            print_error("Setup failed, stopping tests")
-            return False
-        
         # Run all tests
         tests = [
-            self.test_successful_deletion,
-            self.test_finalized_carga_restriction,
-            self.test_nonexistent_item,
-            self.test_nonexistent_carga,
-            self.test_integrity_validation,
-            self.test_debug_logs
+            self.test_structured_response,
+            self.test_empty_result,
+            self.test_filters_conferente,
+            self.test_multiple_results,
+            self.test_critical_validation
         ]
         
         passed_tests = 0
