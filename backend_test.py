@@ -258,48 +258,34 @@ class CargaItemDeletionTester:
             self.test_results.append(("Finalized Carga Restriction", False, f"❌ Status {status_code}"))
             return False
     
-    def test_pagination(self):
-        """Test 4: Pagination"""
-        print_header("TEST 4: Pagination")
+    def test_nonexistent_item(self):
+        """Test 3: Nonexistent item"""
+        print_header("TEST 3: Teste com item inexistente")
         
-        # Test different page sizes
-        test_cases = [
-            ({"page": 1, "pageSize": 5}, "Page 1, Size 5"),
-            ({"page": 1, "pageSize": 10}, "Page 1, Size 10"),
-            ({"page": 2, "pageSize": 5}, "Page 2, Size 5")
-        ]
+        if not self.test_carga_id:
+            print_error("No test carga available")
+            self.test_results.append(("Nonexistent Item", False, "❌ No test data"))
+            return False
         
-        all_passed = True
+        print_info(f"Attempting to delete nonexistent item (index 9999) from carga {self.test_carga_id}")
+        status_code, response = self.make_delete_request(f"/cargas/{self.test_carga_id}/itens/9999")
         
-        for params, description in test_cases:
-            print_info(f"Testing {description}")
-            status_code, data = self.make_request("/cargas", params)
+        if status_code == 404:
+            print_success("Status 404 Not Found received (correct)")
             
-            if status_code == 200:
-                is_valid, msg = self.validate_cargas_response_structure(data)
-                if is_valid:
-                    returned_count = len(data['cargas'])
-                    expected_max = params['pageSize']
-                    
-                    if returned_count <= expected_max:
-                        print_success(f"{description} - OK (returned {returned_count}, max {expected_max})")
-                        print_info(f"Page: {data['page']}, PageSize: {data['pageSize']}")
-                    else:
-                        print_error(f"{description} - Returned {returned_count}, expected max {expected_max}")
-                        all_passed = False
-                else:
-                    print_error(f"{description} - Invalid structure: {msg}")
-                    all_passed = False
+            if "detail" in response and "não encontrado" in response["detail"]:
+                print_success(f"Correct error message: {response['detail']}")
+                self.test_results.append(("Nonexistent Item", True, "✅ Nonexistent item handling working"))
+                return True
             else:
-                print_error(f"{description} - Status {status_code}")
-                all_passed = False
-        
-        if all_passed:
-            self.test_results.append(("Pagination", True, "✅ Pagination working correctly"))
+                print_error(f"Wrong error message: {response}")
+                self.test_results.append(("Nonexistent Item", False, "❌ Wrong error message"))
+                return False
         else:
-            self.test_results.append(("Pagination", False, "❌ Pagination issues found"))
-        
-        return all_passed
+            print_error(f"Expected status 404, got {status_code}")
+            print_error(f"Response: {response}")
+            self.test_results.append(("Nonexistent Item", False, f"❌ Status {status_code}"))
+            return False
     
     def test_date_filters(self):
         """Test 5: Date filtering"""
