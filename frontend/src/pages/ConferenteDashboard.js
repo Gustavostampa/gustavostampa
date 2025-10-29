@@ -29,7 +29,8 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
     
     // Auto-sync a cada 60 segundos
     syncIntervalRef.current = setInterval(() => {
-      if (!cargaSelecionada) {
+      // Só atualiza se não estiver em uma conferência E se houver data selecionada
+      if (!cargaSelecionada && dataSelecionada) {
         carregarCargas(true);
       }
     }, 60000);
@@ -39,7 +40,7 @@ export default function ConferenteDashboard({ usuario, onLogout }) {
         clearInterval(syncIntervalRef.current);
       }
     };
-  }, []);
+  }, [dataSelecionada, cargaSelecionada]); // Adicionar dependências
 
   useEffect(() => {
     if (dataSelecionada && !cargaSelecionada) {
