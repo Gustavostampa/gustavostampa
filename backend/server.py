@@ -61,8 +61,7 @@ class ProdutoEAN(BaseModel):
     sku: str  # codigo_produto
     ean: str  # EAN normalizado
     tipo_unidade: str  # 'UNI', 'CX', 'EXB', 'FRD', etc
-    fator_conversao: int = 1  # quantas unidades representa (CX=12, FRD=100, etc)
-    descricao: Optional[str] = None  # descrição específica desta embalagem
+    descricao: Optional[str] = None  # descrição específica desta embalagem (ex: "Caixa com 12 unidades")
     ativo: bool = True
     criado_em: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
