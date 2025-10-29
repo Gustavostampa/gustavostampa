@@ -27,11 +27,21 @@ export default function GerenciarCargas({ onVoltar }) {
       console.log('API URL:', `${API}/api/cargas`);
       
       const response = await axios.get(`${API}/api/cargas`, { params });
-      console.log('Cargas recebidas:', response.data.length);
-      setCargas(response.data);
+      console.log('Resposta completa:', response.data);
+      
+      // A resposta agora tem formato { total, cargas }
+      if (response.data.cargas) {
+        console.log('Cargas recebidas:', response.data.cargas.length);
+        setCargas(response.data.cargas);
+      } else {
+        // Fallback para formato antigo (array direto)
+        console.log('Cargas recebidas (formato antigo):', response.data.length);
+        setCargas(response.data);
+      }
     } catch (error) {
       console.error('Erro ao carregar cargas:', error);
       console.error('Detalhes do erro:', error.response?.data);
+      alert('Falha ao carregar as cargas. Tente novamente.');
     } finally {
       setLoading(false);
     }
