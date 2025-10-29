@@ -131,10 +131,16 @@ export default function GerenciarCargas({ onVoltar }) {
       <section className="border-2 border-black p-6 rounded-lg">
         <h2 className="text-xl font-bold mb-4">Cargas ({cargas.length})</h2>
 
-        {cargas.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin mx-auto mb-4 w-12 h-12 border-4 border-black border-t-transparent rounded-full"></div>
+            <p className="text-gray-600">Carregando cargas...</p>
+          </div>
+        ) : cargas.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <Search size={48} className="mx-auto mb-4 opacity-30" />
             <p>Nenhuma carga encontrada</p>
+            <p className="text-sm mt-2">Verifique os filtros ou importe novas cargas</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
