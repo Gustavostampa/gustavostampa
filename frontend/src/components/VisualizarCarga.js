@@ -20,7 +20,7 @@ export default function VisualizarCarga({ carga, onVoltar }) {
 
     try {
       const response = await axios.delete(
-        `${API}/api/cargas/${cargaAtual.id}/itens/${itemParaExcluir.index}`
+        `${API}/cargas/${cargaAtual.id}/itens/${itemParaExcluir.index}`
       );
 
       // Remover item localmente
