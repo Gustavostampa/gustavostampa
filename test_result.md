@@ -837,7 +837,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Test Multi-pedidos listing functionality for conferente"
+    - "Investigate Multi-pedidos date filtering issue for conferente panel"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
