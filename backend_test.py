@@ -287,44 +287,29 @@ class CargaItemDeletionTester:
             self.test_results.append(("Nonexistent Item", False, f"❌ Status {status_code}"))
             return False
     
-    def test_date_filters(self):
-        """Test 5: Date filtering"""
-        print_header("TEST 5: Date Filtering")
+    def test_nonexistent_carga(self):
+        """Test 4: Nonexistent carga"""
+        print_header("TEST 4: Teste com carga inexistente")
         
-        # Use recent dates for testing
-        today = datetime.now().strftime('%Y-%m-%d')
-        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-        tomorrow = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
+        print_info("Attempting to delete item from nonexistent carga")
+        status_code, response = self.make_delete_request("/cargas/carga-inexistente/itens/0")
         
-        test_cases = [
-            ({"dataInicio": yesterday}, f"Data início: {yesterday}"),
-            ({"dataFim": tomorrow}, f"Data fim: {tomorrow}"),
-            ({"dataInicio": yesterday, "dataFim": tomorrow}, f"Data range: {yesterday} to {tomorrow}")
-        ]
-        
-        all_passed = True
-        
-        for params, description in test_cases:
-            print_info(f"Testing {description}")
-            status_code, data = self.make_request("/cargas", params)
+        if status_code == 404:
+            print_success("Status 404 Not Found received (correct)")
             
-            if status_code == 200:
-                is_valid, msg = self.validate_cargas_response_structure(data)
-                if is_valid:
-                    print_success(f"{description} - OK (found {data['total']} cargas)")
-                else:
-                    print_error(f"{description} - Invalid structure: {msg}")
-                    all_passed = False
+            if "detail" in response and "não encontrada" in response["detail"]:
+                print_success(f"Correct error message: {response['detail']}")
+                self.test_results.append(("Nonexistent Carga", True, "✅ Nonexistent carga handling working"))
+                return True
             else:
-                print_error(f"{description} - Status {status_code}")
-                all_passed = False
-        
-        if all_passed:
-            self.test_results.append(("Date Filtering", True, "✅ Date filters working"))
+                print_error(f"Wrong error message: {response}")
+                self.test_results.append(("Nonexistent Carga", False, "❌ Wrong error message"))
+                return False
         else:
-            self.test_results.append(("Date Filtering", False, "❌ Date filter issues"))
-        
-        return all_passed
+            print_error(f"Expected status 404, got {status_code}")
+            print_error(f"Response: {response}")
+            self.test_results.append(("Nonexistent Carga", False, f"❌ Status {status_code}"))
+            return False
     
     def test_empty_results(self):
         """Test 6: Empty results should return 200, not 404"""
