@@ -70,10 +70,18 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
     }
 
     try {
-      await axios.post(`${API}/sessoes/${sessaoAtual.id}/finalizar-recipiente`);
+      const response = await axios.post(`${API}/sessoes/${sessaoAtual.id}/finalizar-recipiente`);
       
-      // Atualizar sessão
-      setSessaoAtual({...sessaoAtual, recipiente: null});
+      // Atualizar sessão com recipientes_finalizados do backend
+      const sessaoAtualizada = {
+        ...sessaoAtual,
+        recipiente: null,
+        recipientes_finalizados: [
+          ...(sessaoAtual.recipientes_finalizados || []),
+          sessaoAtual.recipiente
+        ]
+      };
+      setSessaoAtual(sessaoAtualizada);
       
       // Recarregar lista de recipientes
       await carregarRecipientes();
@@ -81,6 +89,7 @@ export default function ConferenciaScreen({ carga, sessao, usuario, onVoltar, on
       // Mostrar modal para selecionar próximo
       setShowModalTrocarRecipiente(true);
     } catch (error) {
+      console.error('Erro ao finalizar recipiente:', error);
       alert(error.response?.data?.detail || 'Erro ao finalizar recipiente');
     }
   };
