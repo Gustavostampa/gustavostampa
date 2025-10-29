@@ -506,14 +506,14 @@ class MultiPedidosTester:
 
 def main():
     """Main function"""
-    tester = CargasEndpointTester()
+    tester = MultiPedidosTester()
     success = tester.run_all_tests()
     
     if success:
-        print(f"\n{Colors.GREEN}{Colors.BOLD}🎉 ALL TESTS PASSED - GET /api/cargas ENDPOINT FORMAT IS CONSISTENT{Colors.ENDC}")
+        print(f"\n{Colors.GREEN}{Colors.BOLD}🎉 ALL TESTS PASSED - MULTI-PEDIDOS LISTING FUNCTIONALITY IS WORKING{Colors.ENDC}")
         sys.exit(0)
     else:
-        print(f"\n{Colors.RED}{Colors.BOLD}💥 SOME TESTS FAILED - FORMAT CONSISTENCY ISSUES FOUND{Colors.ENDC}")
+        print(f"\n{Colors.RED}{Colors.BOLD}💥 SOME TESTS FAILED - MULTI-PEDIDOS LISTING ISSUES FOUND{Colors.ENDC}")
         sys.exit(1)
 
 if __name__ == "__main__":
